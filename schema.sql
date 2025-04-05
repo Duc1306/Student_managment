@@ -1,0 +1,84 @@
+
+CREATE DATABASE IF NOT EXISTS student_managment;
+USE student_managment;
+
+-- Bảng users (chứa thông tin đăng nhập + role)
+CREATE TABLE IF NOT EXISTS users (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  username VARCHAR(50) NOT NULL UNIQUE,
+  password VARCHAR(255) NOT NULL,
+  role ENUM('admin','teacher','student') NOT NULL DEFAULT 'student',
+  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Bảng students
+CREATE TABLE IF NOT EXISTS students (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  user_id INT NOT NULL,
+  ma_sinh_vien VARCHAR(50),
+  ho_ten VARCHAR(100),
+  ngay_sinh DATE,
+  dia_chi VARCHAR(255),
+  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_students_users FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Bảng teachers
+CREATE TABLE IF NOT EXISTS teachers (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  user_id INT NOT NULL,
+  ma_giao_vien VARCHAR(50),
+  ho_ten VARCHAR(100),
+  bo_mon VARCHAR(100),
+  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_teachers_users FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Bảng subjects (môn học)
+CREATE TABLE IF NOT EXISTS subjects (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  ten_mon VARCHAR(100),
+  ma_mon VARCHAR(50),
+  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Bảng classes (lớp học)
+CREATE TABLE IF NOT EXISTS classes (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  ten_lop VARCHAR(100),
+  ma_lop VARCHAR(50),
+  subject_id INT,
+  teacher_id INT,
+  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_classes_subjects FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE SET NULL,
+  CONSTRAINT fk_classes_teachers FOREIGN KEY (teacher_id) REFERENCES teachers(id) ON DELETE SET NULL
+);
+
+-- Bảng trung gian student_class (nhiều-nhiều)
+CREATE TABLE IF NOT EXISTS student_class (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  student_id INT NOT NULL,
+  class_id INT NOT NULL,
+  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_student_class_student FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+  CONSTRAINT fk_student_class_class FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE
+);
+
+-- Bảng attendance (điểm danh)
+CREATE TABLE IF NOT EXISTS attendance (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  student_id INT NOT NULL,
+  class_id INT NOT NULL,
+  date DATE NOT NULL,
+  status ENUM('present','absent','late') DEFAULT 'present',
+  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_attendance_student FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+  CONSTRAINT fk_attendance_class FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE
+);
