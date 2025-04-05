@@ -1,4 +1,4 @@
-// attendance-frontend/src/pages/AdminDashboardPage.js
+
 import React from "react";
 import { Link, Outlet } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
@@ -16,9 +16,7 @@ function AdminDashboardPage() {
   return (
     <div className="container mt-4">
       <h2>Dashboard Admin</h2>
-      {/* <button onClick={handleLogout} className="btn btn-danger">
-        Đăng xuất
-      </button> */}
+     
       <div className="row">
         <div className="col-md-3">
           <div className="list-group">

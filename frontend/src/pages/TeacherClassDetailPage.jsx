@@ -1,4 +1,4 @@
-// attendance-frontend/src/pages/TeacherClassDetailPage.js
+
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../api";
@@ -9,9 +9,18 @@ function TeacherClassDetailPage() {
   const [classDetail, setClassDetail] = useState(null);
   const [students, setStudents] = useState([]);
   const [date, setDate] = useState("");
-  const [attendanceData, setAttendanceData] = useState({}); // object: studentId -> status
+  const [attendanceData, setAttendanceData] = useState({}); // studentId -> status
+  // Dữ liệu cho việc thêm học sinh mới
+  const [newStudentData, setNewStudentData] = useState({
+    studentId: "", // Nếu có ID, có thể nhập vào; nếu để trống thì tạo mới
+    ma_sinh_vien: "",
+    ho_ten: "",
+    ngay_sinh: "",
+    dia_chi: "",
+    password: "", // Trường mật khẩu cho học sinh
+  });
 
-  useEffect(() => {
+  const fetchClassData = () => {
     api
       .get(`/classes/${id}/students`)
       .then((res) => {
@@ -22,7 +31,6 @@ function TeacherClassDetailPage() {
           teacher: res.data.teacher,
         });
         setStudents(res.data.students);
-        // Khởi tạo trạng thái điểm danh mặc định cho mỗi học sinh (ví dụ: 'present')
         const initData = {};
         res.data.students.forEach((student) => {
           initData[student.id] = "present";
@@ -33,6 +41,10 @@ function TeacherClassDetailPage() {
         console.error(err);
         alert("Lỗi tải chi tiết lớp");
       });
+  };
+
+  useEffect(() => {
+    fetchClassData();
   }, [id]);
 
   const handleStatusChange = (studentId, newStatus) => {
@@ -62,6 +74,42 @@ function TeacherClassDetailPage() {
       });
   };
 
+  const handleRemoveStudent = (studentId) => {
+    if (!window.confirm("Bạn có chắc muốn xoá học sinh này khỏi lớp?")) return;
+    api
+      .delete(`/classes/${id}/students/${studentId}`)
+      .then((res) => {
+        alert("Học sinh đã được xoá");
+        fetchClassData();
+      })
+      .catch((err) => {
+        console.error(err);
+        alert(err.response?.data?.error || "Lỗi xoá học sinh");
+      });
+  };
+
+  const handleAddStudent = () => {
+    // Gửi toàn bộ dữ liệu từ newStudentData, bao gồm mật khẩu
+    api
+      .post(`/classes/${id}/students`, newStudentData)
+      .then((res) => {
+        alert("Học sinh đã được thêm");
+        setNewStudentData({
+          studentId: "",
+          ma_sinh_vien: "",
+          ho_ten: "",
+          ngay_sinh: "",
+          dia_chi: "",
+          password: "", // Reset mật khẩu
+        });
+        fetchClassData();
+      })
+      .catch((err) => {
+        console.error(err);
+        alert(err.response?.data?.error || "Lỗi thêm học sinh");
+      });
+  };
+
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("role");
@@ -72,9 +120,7 @@ function TeacherClassDetailPage() {
     <div className="container mt-4">
       <div className="d-flex justify-content-between align-items-center">
         <h2>Chi tiết lớp: {classDetail ? classDetail.className : ""}</h2>
-        {/* <button onClick={handleLogout} className="btn btn-danger">
-          Đăng xuất
-        </button> */}
+
       </div>
       <p>Môn học: {classDetail ? classDetail.subject : ""}</p>
       <p>Giáo viên: {classDetail ? classDetail.teacher : ""}</p>
@@ -98,6 +144,7 @@ function TeacherClassDetailPage() {
             <th>Mã sinh viên</th>
             <th>Username</th>
             <th>Trạng thái</th>
+            <th>Hành động</th>
           </tr>
         </thead>
         <tbody>
@@ -120,13 +167,91 @@ function TeacherClassDetailPage() {
                   <option value="late">Muộn</option>
                 </select>
               </td>
+              <td>
+                <button
+                  className="btn btn-danger btn-sm"
+                  onClick={() => handleRemoveStudent(student.id)}
+                >
+                  Xoá
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
-      <button className="btn btn-primary" onClick={handleSaveAttendance}>
+      <button className="btn btn-primary me-2" onClick={handleSaveAttendance}>
         Lưu điểm danh
       </button>
+
+      <hr />
+      <h4>Thêm học sinh vào lớp</h4>
+      <div className="mb-3">
+        <label>Nếu đã có ID, nhập vào (hoặc bỏ trống để tạo mới):</label>
+        <input
+          type="text"
+          className="form-control mb-2"
+          placeholder="Student ID (nếu có)"
+          value={newStudentData.studentId}
+          onChange={(e) =>
+            setNewStudentData({ ...newStudentData, studentId: e.target.value })
+          }
+        />
+        <label>Mã sinh viên:</label>
+        <input
+          type="text"
+          className="form-control mb-2"
+          placeholder="Mã sinh viên"
+          value={newStudentData.ma_sinh_vien}
+          onChange={(e) =>
+            setNewStudentData({
+              ...newStudentData,
+              ma_sinh_vien: e.target.value,
+            })
+          }
+        />
+        <label>Họ tên:</label>
+        <input
+          type="text"
+          className="form-control mb-2"
+          placeholder="Họ tên"
+          value={newStudentData.ho_ten}
+          onChange={(e) =>
+            setNewStudentData({ ...newStudentData, ho_ten: e.target.value })
+          }
+        />
+        <label>Ngày sinh:</label>
+        <input
+          type="date"
+          className="form-control mb-2"
+          value={newStudentData.ngay_sinh}
+          onChange={(e) =>
+            setNewStudentData({ ...newStudentData, ngay_sinh: e.target.value })
+          }
+        />
+        <label>Địa chỉ:</label>
+        <input
+          type="text"
+          className="form-control mb-2"
+          placeholder="Địa chỉ"
+          value={newStudentData.dia_chi}
+          onChange={(e) =>
+            setNewStudentData({ ...newStudentData, dia_chi: e.target.value })
+          }
+        />
+        <label>Mật khẩu:</label>
+        <input
+          type="password"
+          className="form-control mb-2"
+          placeholder="Mật khẩu"
+          value={newStudentData.password}
+          onChange={(e) =>
+            setNewStudentData({ ...newStudentData, password: e.target.value })
+          }
+        />
+        <button className="btn btn-success" onClick={handleAddStudent}>
+          Thêm học sinh
+        </button>
+      </div>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-// attendance-frontend/src/App.js
+
 import React from "react";
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
@@ -9,8 +9,8 @@ import ClassManagerPage from "./pages/ClassManagerPage";
 import TeacherDashboardPage from "./pages/TeacherDashboardPage";
 import TeacherClassDetailPage from "./pages/TeacherClassDetailPage";
 import StudentDashboardPage from "./pages/StudentDashboardPage";
-import AttendancePage from "./pages/AttendancePage";
-import ReportPage from "./pages/ReportPage";
+// import AttendancePage from "./pages/AttendancePage";
+// import ReportPage from "./pages/ReportPage";
 
 function App() {
   const role = localStorage.getItem("role");
@@ -25,7 +25,7 @@ function App() {
     <BrowserRouter>
       <nav className="navbar navbar-expand-lg navbar-light bg-light">
         <div className="container-fluid">
-          <Link to="/" className="navbar-brand">
+          <Link to="/login" className="navbar-brand">
             BK Attendance
           </Link>
           <div className="collapse navbar-collapse d-flex justify-content-end">
@@ -48,9 +48,9 @@ function App() {
                         </Link>
                       </li>
                       <li className="nav-item">
-                        <Link to="/attendance" className="nav-link">
+                        {/* <Link to="/attendance" className="nav-link">
                           Điểm danh
-                        </Link>
+                        </Link> */}
                       </li>
                     </>
                   )}
@@ -62,9 +62,9 @@ function App() {
                         </Link>
                       </li>
                       <li className="nav-item">
-                        <Link to="/report" className="nav-link">
+                        {/* <Link to="/report" className="nav-link">
                           Báo cáo
-                        </Link>
+                        </Link> */}
                       </li>
                     </>
                   )}
@@ -115,9 +115,8 @@ function App() {
 
         {/* Dashboard dành cho Sinh viên */}
         <Route path="/student" element={<StudentDashboardPage />} />
-        <Route path="/report" element={<ReportPage />} />
+  
 
-        <Route path="/attendance" element={<AttendancePage />} />
       </Routes>
     </BrowserRouter>
   );

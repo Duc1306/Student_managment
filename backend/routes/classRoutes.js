@@ -34,4 +34,16 @@ router.delete("/:id", (req, res) => {
   classController.delete(req, res);
 });
 
+router.post("/:id/students", (req, res) => {
+  if (req.user.role !== "teacher")
+    return res.status(403).json({ error: "Teacher only" });
+  classController.addStudentToClass(req, res);
+});
+
+router.delete("/:id/students/:studentId", (req, res) => {
+  if (req.user.role !== "teacher")
+    return res.status(403).json({ error: "Teacher only" });
+  classController.removeStudentFromClass(req, res);
+});
+
 module.exports = router;

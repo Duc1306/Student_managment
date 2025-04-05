@@ -1,4 +1,4 @@
-// attendance-backend/controllers/attendanceController.js
+
 const { Attendance, Student, Class } = require("../models");
 
 module.exports = {

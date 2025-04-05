@@ -8,6 +8,7 @@ const userRoutes = require("./routes/userRoutes");
 const subjectRoutes = require("./routes/subjectRoutes");
 const classRoutes = require("./routes/classRoutes");
 const attendanceRoutes = require("./routes/attendanceRoutes");
+const teacherRoutes = require("./routes/teacherRoutes");
 
 const app = express();
 app.use(
@@ -23,6 +24,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/subjects", subjectRoutes);
 app.use("/api/classes", classRoutes);
 app.use("/api/attendance", attendanceRoutes);
+app.use("/api/teachers", teacherRoutes);
 
 const PORT = process.env.PORT || 5000;
 sequelize
