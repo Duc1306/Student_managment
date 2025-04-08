@@ -1,0 +1,41 @@
+/* src/theme.css */
+
+/* Biến màu chính HUST */
+:root {
+  --hust-red: #AF1E2D;
+  --hust-bg-light: #f8f9fa; /* màu nền sáng */
+  --hust-bg-dark: #1c1c1c;  /* màu nền tối */
+  --hust-text-light: #ffffff;
+  --hust-text-dark: #000000;
+}
+
+body.light-mode {
+  background-color: var(--hust-bg-light);
+  color: var(--hust-text-dark);
+}
+
+body.dark-mode {
+  background-color: var(--hust-bg-dark);
+  color: var(--hust-text-light);
+}
+
+/* Navbar */
+.navbar-hust {
+  background-color: var(--hust-red) !important;
+}
+
+/* Card highlight cho teacher/class detail */
+.card-highlight {
+  border-left: 4px solid var(--hust-red);
+  box-shadow: 0 0 6px rgba(0,0,0,0.1);
+}
+
+.btn-hust {
+  background-color: var(--hust-red);
+  border-color: var(--hust-red);
+  color: #ffffff;
+}
+.btn-hust:hover {
+  background-color: #c11f32; /* màu hover đậm hơn một chút */
+  border-color: #c11f32;
+}
