@@ -2,9 +2,9 @@ require('dotenv').config();
 const {Sequelize} = require('sequelize');
 
 const sequelize = new Sequelize(
-  process.env.DB_NAME, //student_managment\
-  process.env.DB_USER, //root
-  process.env.DB_PASS, //123456
+  process.env.DB_NAME, 
+  process.env.DB_USER, 
+  process.env.DB_PASS, 
 
   {
     host: process.env.DB_HOST || "localhost",
