@@ -4,36 +4,40 @@ const router = express.Router();
 const userController = require("../controllers/userController");
 const authMiddleware = require("../middlewares/authMiddleware");
 
-// Áp dụng middleware => phải có token
+// Bảo vệ route => login + phân quyền (vd. chỉ admin)
 router.use(authMiddleware);
 
-// Chỉ admin được thao tác
+// Lấy tất cả user (nếu cần)
 router.get("/", (req, res) => {
+  // Giả sử chỉ admin mới xem DS user
   if (req.user.role !== "admin") {
     return res.status(403).json({ error: "Access denied. Admin only" });
   }
   userController.getAll(req, res);
 });
 
+// Tạo user (chỉ admin)
 router.post("/", (req, res) => {
   if (req.user.role !== "admin") {
     return res.status(403).json({ error: "Admin only" });
   }
-  userController.create(req, res);
+  userController.createUser(req, res);
 });
 
+// Cập nhật user
 router.put("/:id", (req, res) => {
   if (req.user.role !== "admin") {
     return res.status(403).json({ error: "Admin only" });
   }
-  userController.update(req, res);
+  userController.updateUser(req, res);
 });
 
+// Xóa user
 router.delete("/:id", (req, res) => {
   if (req.user.role !== "admin") {
     return res.status(403).json({ error: "Admin only" });
   }
-  userController.delete(req, res);
+  userController.deleteUser(req, res);
 });
 
 module.exports = router;

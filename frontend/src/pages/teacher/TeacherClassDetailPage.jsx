@@ -167,9 +167,9 @@ function TeacherClassDetailPage() {
               />
             </div>
           </div>
-          <button className="btn btn-hust" onClick={handleSaveAttendance}>
+          {/* <button className="btn btn-hust" onClick={handleSaveAttendance}>
             <i className="bi bi-check-circle me-1"></i>Lưu điểm danh
-          </button>
+          </button> */}
         </div>
       </div>
 
