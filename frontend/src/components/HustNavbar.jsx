@@ -12,10 +12,13 @@ function HustNavbar({ darkMode, setDarkMode }) {
     navigate("/login");
   };
 
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+  };
+
   return (
     <nav className="navbar navbar-expand-lg navbar-hust navbar-dark">
       <div className="container-fluid">
-        
         <Link className="navbar-brand d-flex align-items-center" to="/login">
           <img
             src="/hust.jpg"
@@ -54,7 +57,8 @@ function HustNavbar({ darkMode, setDarkMode }) {
             {role === "teacher" && (
               <li className="nav-item">
                 <Link className="nav-link" to="/teacher">
-                  <i className="bi bi-person-workspace me-1"></i>Teacher Dashboard
+                  <i className="bi bi-person-workspace me-1"></i>Teacher
+                  Dashboard
                 </Link>
               </li>
             )}
@@ -88,7 +92,6 @@ function HustNavbar({ darkMode, setDarkMode }) {
               </li>
             )}
 
-            
             <li className="nav-item d-flex align-items-center ms-2">
               <div className="form-check form-switch text-light">
                 <input
@@ -96,9 +99,12 @@ function HustNavbar({ darkMode, setDarkMode }) {
                   type="checkbox"
                   id="darkModeSwitch"
                   checked={darkMode}
-                  onChange={() => setDarkMode(!darkMode)}
+                  onChange={toggleDarkMode}
                 />
-                <label className="form-check-label" htmlFor="darkModeSwitch">
+                <label
+                  className="form-check-label ms-1"
+                  htmlFor="darkModeSwitch"
+                >
                   {darkMode ? (
                     <>
                       <i className="bi bi-moon-stars me-1"></i>Dark

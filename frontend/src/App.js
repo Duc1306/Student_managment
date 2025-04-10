@@ -17,7 +17,19 @@ function App() {
   // Dark Mode
   const [darkMode, setDarkMode] = useState(false);
 
+  // Khi app load, đọc trạng thái darkMode từ localStorage
   useEffect(() => {
+    const savedMode = localStorage.getItem("darkMode");
+    if (savedMode) {
+      const parsed = JSON.parse(savedMode);
+      setDarkMode(parsed);
+      document.body.className = parsed ? "dark-mode" : "light-mode";
+    }
+  }, []);
+
+  // Mỗi khi darkMode thay đổi -> lưu localStorage + thay className body
+  useEffect(() => {
+    localStorage.setItem("darkMode", JSON.stringify(darkMode));
     document.body.className = darkMode ? "dark-mode" : "light-mode";
   }, [darkMode]);
 
