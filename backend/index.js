@@ -10,6 +10,7 @@ const classRoutes = require("./routes/classRoutes");
 const attendanceRoutes = require("./routes/attendanceRoutes");
 const teacherRoutes = require("./routes/teacherRoutes");
 const reportRoutes = require("./routes/reportRoutes");
+const studentRoutes = require("./routes/studentRoutes");
 
 const app = express();
 app.use(
@@ -27,6 +28,7 @@ app.use("/api/classes", classRoutes);
 app.use("/api/attendance", attendanceRoutes);
 app.use("/api/teachers", teacherRoutes);
 app.use("/api/reports", reportRoutes);
+app.use("/api/students", studentRoutes);
 
 const PORT = process.env.PORT || 5000;
 sequelize

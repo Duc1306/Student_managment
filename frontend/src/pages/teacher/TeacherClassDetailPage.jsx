@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import HustHeader from "../../components/HustHeader";
@@ -11,9 +10,12 @@ function TeacherClassDetailPage() {
 
   // Thông tin chi tiết lớp
   const [classDetail, setClassDetail] = useState(null);
-
-  // Danh sách học sinh
+  // Danh sách học sinh đã có trong lớp
   const [students, setStudents] = useState([]);
+  // Danh sách tất cả học sinh từ DB
+  const [allStudents, setAllStudents] = useState([]);
+  // Giá trị học sinh được chọn để thêm vào lớp (studentId)
+  const [selectedStudentId, setSelectedStudentId] = useState("");
 
   // Ngày điểm danh
   const [date, setDate] = useState("");
@@ -21,31 +23,18 @@ function TeacherClassDetailPage() {
   // studentId -> status
   const [attendanceData, setAttendanceData] = useState({});
 
-  // Dữ liệu thêm học sinh mới
-  const [newStudentData, setNewStudentData] = useState({
-    studentId: "", // Nếu nhập ID có sẵn, hoặc bỏ trống để tạo mới
-    ma_sinh_vien: "",
-    ho_ten: "",
-    ngay_sinh: "",
-    dia_chi: "",
-    password: "", // mật khẩu học sinh
-  });
-
-  // Lấy thông tin lớp & học sinh
+  // Lấy thông tin lớp và danh sách học sinh của lớp
   const fetchClassData = () => {
     api
       .get(`/classes/${id}/students`)
       .then((res) => {
-        // Cập nhật thông tin lớp
         setClassDetail({
           classId: res.data.classId,
           className: res.data.className,
           subject: res.data.subject,
           teacher: res.data.teacher,
         });
-        // Danh sách học sinh
         setStudents(res.data.students);
-
         // Khởi tạo trạng thái điểm danh mặc định = 'present'
         const initData = {};
         res.data.students.forEach((student) => {
@@ -59,11 +48,25 @@ function TeacherClassDetailPage() {
       });
   };
 
+  // Lấy danh sách tất cả học sinh từ database
+  const fetchAllStudents = () => {
+    api
+      .get("/students")
+      .then((res) => {
+        setAllStudents(res.data);
+      })
+      .catch((err) => {
+        console.error(err);
+        alert("Lỗi tải danh sách học sinh");
+      });
+  };
+
   useEffect(() => {
     fetchClassData();
+    fetchAllStudents();
   }, [id]);
 
-  // Xử lý đổi trạng thái attendance trong select
+  // Xử lý đổi trạng thái điểm danh trong select
   const handleStatusChange = (studentId, newStatus) => {
     setAttendanceData((prev) => ({
       ...prev,
@@ -107,21 +110,17 @@ function TeacherClassDetailPage() {
       });
   };
 
-  // Thêm học sinh (có thể tạo mới hoặc nhập ID đã có)
+  // Thêm học sinh từ danh sách có sẵn
   const handleAddStudent = () => {
+    if (!selectedStudentId) {
+      alert("Vui lòng chọn học sinh để thêm");
+      return;
+    }
     api
-      .post(`/classes/${id}/students`, newStudentData)
+      .post(`/classes/${id}/students`, { studentId: selectedStudentId })
       .then((res) => {
         alert("Học sinh đã được thêm");
-        // Reset form
-        setNewStudentData({
-          studentId: "",
-          ma_sinh_vien: "",
-          ho_ten: "",
-          ngay_sinh: "",
-          dia_chi: "",
-          password: "",
-        });
+        setSelectedStudentId(""); // Reset chọn lựa
         fetchClassData();
       })
       .catch((err) => {
@@ -129,6 +128,11 @@ function TeacherClassDetailPage() {
         alert(err.response?.data?.error || "Lỗi thêm học sinh");
       });
   };
+
+  // Lọc ra danh sách học sinh chưa có trong lớp
+  const availableStudents = allStudents.filter(
+    (student) => !students.some((s) => s.id === student.id)
+  );
 
   // Đăng xuất
   const handleLogout = () => {
@@ -144,7 +148,7 @@ function TeacherClassDetailPage() {
         subtitle={`Môn: ${classDetail ? classDetail.subject : ""} | GV: ${
           classDetail ? classDetail.teacher : ""
         }`}
-        icon="clipboard-check" // e.g. "bi bi-clipboard-check"
+        icon="clipboard-check"
       />
 
       <div className="card mb-4">
@@ -163,12 +167,10 @@ function TeacherClassDetailPage() {
               />
             </div>
           </div>
-          {/* <button className="btn btn-hust" onClick={handleSaveAttendance}>
-            <i className="bi bi-check-circle me-1"></i>Lưu điểm danh
-          </button> */}
         </div>
       </div>
 
+      {/* Bảng danh sách học sinh của lớp */}
       <div className="card mb-4">
         <div className="card-body">
           <h5>
@@ -233,106 +235,30 @@ function TeacherClassDetailPage() {
         </div>
       </div>
 
+      {/* Phần thêm học sinh bằng cách chọn từ danh sách */}
       <div className="card mb-4">
         <div className="card-body">
           <h5>
             <i className="bi bi-person-plus me-1"></i>Thêm học sinh vào lớp
           </h5>
           <p className="text-muted mb-2">
-            Nếu học sinh chưa tồn tại, hãy để trống "Student ID" và nhập thông
-            tin tạo mới.
+            Chọn học sinh từ danh sách sau để thêm vào lớp.
           </p>
 
           <div className="mb-3">
-            <label className="form-label">Student ID (nếu đã tồn tại)</label>
-            <input
-              type="text"
-              className="form-control mb-2"
-              placeholder="Student ID"
-              value={newStudentData.studentId}
-              onChange={(e) =>
-                setNewStudentData({
-                  ...newStudentData,
-                  studentId: e.target.value,
-                })
-              }
-            />
-          </div>
-
-          <div className="mb-2">
-            <label className="form-label">Mã sinh viên</label>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Mã sinh viên"
-              value={newStudentData.ma_sinh_vien}
-              onChange={(e) =>
-                setNewStudentData({
-                  ...newStudentData,
-                  ma_sinh_vien: e.target.value,
-                })
-              }
-            />
-          </div>
-
-          <div className="mb-2">
-            <label className="form-label">Họ tên</label>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Họ tên"
-              value={newStudentData.ho_ten}
-              onChange={(e) =>
-                setNewStudentData({ ...newStudentData, ho_ten: e.target.value })
-              }
-            />
-          </div>
-
-          <div className="mb-2">
-            <label className="form-label">Ngày sinh</label>
-            <input
-              type="date"
-              className="form-control"
-              value={newStudentData.ngay_sinh}
-              onChange={(e) =>
-                setNewStudentData({
-                  ...newStudentData,
-                  ngay_sinh: e.target.value,
-                })
-              }
-            />
-          </div>
-
-          <div className="mb-2">
-            <label className="form-label">Địa chỉ</label>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Địa chỉ"
-              value={newStudentData.dia_chi}
-              onChange={(e) =>
-                setNewStudentData({
-                  ...newStudentData,
-                  dia_chi: e.target.value,
-                })
-              }
-            />
-          </div>
-
-          <div className="mb-2">
-            <label className="form-label">Mật khẩu</label>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Mật khẩu"
-              value={newStudentData.password}
-              onChange={(e) =>
-                setNewStudentData({
-                  ...newStudentData,
-                  password: e.target.value,
-                })
-              }
-            />
+            <label className="form-label">Chọn học sinh</label>
+            <select
+              className="form-select"
+              value={selectedStudentId}
+              onChange={(e) => setSelectedStudentId(e.target.value)}
+            >
+              <option value="">--Chọn học sinh để thêm--</option>
+              {availableStudents.map((student) => (
+                <option key={student.id} value={student.id}>
+                  {student.ho_ten} - {student.ma_sinh_vien}
+                </option>
+              ))}
+            </select>
           </div>
 
           <button className="btn btn-success" onClick={handleAddStudent}>
