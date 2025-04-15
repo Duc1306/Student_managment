@@ -12,6 +12,8 @@ import TeacherDashboardPage from "./pages/teacher/TeacherDashboardPage";
 import TeacherClassDetailPage from "./pages/teacher/TeacherClassDetailPage";
 import StudentDashboardPage from "./pages/student/StudentDashboardPage";
 import LoginPage from "./pages/auth/LoginPage";
+import AdminReportPage from "./pages/admin/AdminReportPage";
+import TeacherReportPage from "./pages/teacher/TeacherReportPage";
 
 function App() {
   // Dark Mode
@@ -52,11 +54,13 @@ function App() {
           <Route path="users" element={<UserManagerPage />} />
           <Route path="subjects" element={<SubjectManagerPage />} />
           <Route path="classes" element={<ClassManagerPage />} />
+          <Route path="reports" element={<AdminReportPage />} />
         </Route>
 
         {/* Teacher */}
         <Route path="/teacher" element={<TeacherDashboardPage />} />
         <Route path="/teacher/class/:id" element={<TeacherClassDetailPage />} />
+        <Route path="/teacher/report/:id" element={<TeacherReportPage />} />
 
         {/* Student */}
         <Route path="/student" element={<StudentDashboardPage />} />

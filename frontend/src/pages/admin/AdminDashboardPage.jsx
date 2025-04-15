@@ -35,14 +35,14 @@ function AdminDashboardPage() {
                     Class Manager
                   </Link>
                 </li>
+                {/* Thêm mục cho Báo cáo */}
+                <li className="list-group-item">
+                  <Link to="reports" className="text-decoration-none">
+                    Báo cáo tổng quan
+                  </Link>
+                </li>
               </ul>
               <hr />
-              {/* <button
-                className="btn btn-outline-danger w-100"
-                onClick={handleLogout}
-              >
-                Đăng xuất
-              </button> */}
             </div>
           </div>
         </div>

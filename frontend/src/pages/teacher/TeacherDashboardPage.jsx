@@ -27,10 +27,9 @@ function TeacherDashboardPage() {
   };
 
   return (
- 
     <div className="container my-4">
       {/* Header */}
-      <HustHeader 
+      <HustHeader
         title="Teacher Dashboard"
         subtitle="Xem danh sách lớp đang phụ trách"
         icon="person-workspace" /* icon = "bi bi-person-workspace" */
@@ -51,15 +50,24 @@ function TeacherDashboardPage() {
                     <div className="card-body d-flex flex-column">
                       <h6 className="card-title">{c.ten_lop}</h6>
                       <p className="card-text flex-grow-1">
-                        Môn: {c.Subject ? c.Subject.ten_mon : 'N/A'}
+                        Môn: {c.Subject ? c.Subject.ten_mon : "N/A"}
                       </p>
-                      <button
-                        className="btn btn-outline-danger mt-auto"
-                        onClick={() => handleDetail(c.id)}
-                      >
-                        <i className="bi bi-arrow-right-circle me-1"></i>
-                        Xem chi tiết
-                      </button>
+                      <div className="d-flex justify-content-between">
+                        <button
+                          className="btn btn-outline-danger"
+                          onClick={() => navigate(`/teacher/class/${c.id}`)}
+                        >
+                          <i className="bi bi-arrow-right-circle me-1"></i>
+                          Xem chi tiết
+                        </button>
+                        <button
+                          className="btn btn-outline-primary"
+                          onClick={() => navigate(`/teacher/report/${c.id}`)}
+                        >
+                          <i className="bi bi-bar-chart me-1"></i>
+                          Báo cáo
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>

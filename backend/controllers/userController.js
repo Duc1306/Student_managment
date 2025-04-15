@@ -1,5 +1,5 @@
 
-const { User, Teacher } = require("../models");
+const { User,Student, Teacher } = require("../models");
 
 
 module.exports = {
@@ -16,9 +16,18 @@ module.exports = {
   // Tạo user
   createUser: async (req, res) => {
     try {
-      // Thông tin từ body
-      const { username, password, role, ma_giao_vien, ho_ten, bo_mon } =
-        req.body;
+      // Lấy thông tin từ req.body
+      const {
+        username,
+        password,
+        role,
+        ma_giao_vien,
+        ho_ten,
+        bo_mon,
+        ma_sinh_vien,
+        ngay_sinh,
+        dia_chi,
+      } = req.body;
 
       // 1) Tạo user trong bảng users
       const newUser = await User.create({ username, password, role });
@@ -31,6 +40,14 @@ module.exports = {
           ma_giao_vien: ma_giao_vien || `GV_${newUser.id}`,
           ho_ten: ho_ten || newUser.username,
           bo_mon: bo_mon || "Chưa cập nhật",
+        });
+      } else if (role === "student") {
+        await Student.create({
+          user_id: newUser.id,
+          ma_sinh_vien: ma_sinh_vien || `SV_${newUser.id}`,
+          ho_ten: ho_ten || newUser.username,
+          ngay_sinh: ngay_sinh || null,
+          dia_chi: dia_chi || "Chưa cập nhật",
         });
       }
 

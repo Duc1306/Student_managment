@@ -139,7 +139,6 @@ function TeacherClassDetailPage() {
 
   return (
     <div className="container mt-4">
-   
       <HustHeader
         title={`Chi tiết lớp: ${classDetail ? classDetail.className : ""}`}
         subtitle={`Môn: ${classDetail ? classDetail.subject : ""} | GV: ${
@@ -147,9 +146,6 @@ function TeacherClassDetailPage() {
         }`}
         icon="clipboard-check" // e.g. "bi bi-clipboard-check"
       />
-
-     
-     
 
       <div className="card mb-4">
         <div className="card-body">
@@ -227,6 +223,12 @@ function TeacherClassDetailPage() {
             onClick={handleSaveAttendance}
           >
             <i className="bi bi-check-circle me-1"></i>Lưu điểm danh
+          </button>
+          <button
+            className="btn btn-outline-primary mt-3"
+            onClick={() => navigate(`/teacher/report/${id}`)}
+          >
+            <i className="bi bi-bar-chart me-1"></i>Xem báo cáo
           </button>
         </div>
       </div>
@@ -339,9 +341,8 @@ function TeacherClassDetailPage() {
         </div>
       </div>
 
-   
       <hr />
-      <HustFooter/>
+      <HustFooter />
     </div>
   );
 }
