@@ -3,7 +3,7 @@ import api from "../../api";
 import HustFooter from "../../components/HustFooter";
 import HustHeader from "../../components/HustHeader";
 import useFetchData from "../../hooks/useFetchData";
-import Pagination from "../../components/Pagination";  
+import Pagination from "../../components/Pagination";
 
 function UserManagerPage() {
   const [users, setUsers] = useState([]);
@@ -12,7 +12,6 @@ function UserManagerPage() {
     password: "",
     role: "student",
   });
-
   const [keyword, setKeyword] = useState("");
   const {
     data: usersData,
@@ -21,13 +20,22 @@ function UserManagerPage() {
     refetch,
   } = useFetchData("/users", { keyword, page: 1, limit: 6 });
 
+  // State cho modal chỉnh sửa User
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [userToEdit, setUserToEdit] = useState(null);
+  const [editUserData, setEditUserData] = useState({
+    username: "",
+    password: "",
+    role: "student",
+  });
+
   const handleSearch = (e) => {
     e.preventDefault();
     refetch({ keyword, page: 1 });
   };
 
   const handlePageChange = (newPage) => {
-    refetch({ page: newPage , keyword });
+    refetch({ page: newPage, keyword });
   };
 
   const fetchUsers = async () => {
@@ -46,11 +54,11 @@ function UserManagerPage() {
 
   const handleCreateUser = async () => {
     try {
-      // POST /users
       await api.post("/users", newUser);
       alert("Tạo user thành công");
       setNewUser({ username: "", password: "", role: "student" });
       fetchUsers();
+      refetch();
     } catch (err) {
       console.error(err);
       alert("Lỗi tạo user");
@@ -62,19 +70,50 @@ function UserManagerPage() {
     try {
       await api.delete(`/users/${userId}`);
       fetchUsers();
+      refetch();
     } catch (err) {
       console.error(err);
       alert("Xóa user thất bại");
     }
   };
 
+  // --- Xử lý chỉnh sửa User ---
+  const handleEditClick = (user) => {
+    setUserToEdit(user);
+    setEditUserData({
+      username: user.username,
+      password: "", // Để trống nếu không muốn thay đổi mật khẩu
+      role: user.role,
+    });
+    setShowEditModal(true);
+  };
+
+  const handleEditChange = (e) => {
+    setEditUserData({
+      ...editUserData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleSaveEdit = async () => {
+    try {
+      await api.put(`/users/${userToEdit.id}`, editUserData);
+      alert("Cập nhật user thành công");
+      setShowEditModal(false);
+      fetchUsers();
+      refetch();
+    } catch (err) {
+      console.error(err);
+      alert("Lỗi cập nhật user");
+    }
+  };
+
   return (
     <div className="container my-4">
-      {/* Header */}
       <HustHeader
         title="Quản lý User"
         subtitle="Tạo, chỉnh sửa hoặc xoá tài khoản người dùng"
-        icon="people-fill" /* Bootstrap icon */
+        icon="people-fill"
       />
       <div className="card shadow-sm mb-4">
         <div className="card-body">
@@ -144,6 +183,12 @@ function UserManagerPage() {
                   <td>{u.role}</td>
                   <td>
                     <button
+                      className="btn btn-sm btn-primary me-2"
+                      onClick={() => handleEditClick(u)}
+                    >
+                      <i className="bi bi-pencil-square"></i> Sửa
+                    </button>
+                    <button
                       className="btn btn-danger btn-sm"
                       onClick={() => handleDeleteUser(u.id)}
                     >
@@ -163,8 +208,77 @@ function UserManagerPage() {
           )}
         </div>
       </div>
-     
-      {/* Footer */}
+
+      {/* Modal chỉnh sửa User */}
+      {showEditModal && (
+        <div className="modal show d-block" tabIndex="-1">
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Chỉnh sửa User</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowEditModal(false)}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <div className="mb-3">
+                  <label className="form-label">Username</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    name="username"
+                    value={editUserData.username}
+                    onChange={handleEditChange}
+                  />
+                </div>
+                <div className="mb-3">
+                  <label className="form-label">Password</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    name="password"
+                    placeholder="Để trống nếu không thay đổi"
+                    value={editUserData.password}
+                    onChange={handleEditChange}
+                  />
+                </div>
+                <div className="mb-3">
+                  <label className="form-label">Role</label>
+                  <select
+                    className="form-select"
+                    name="role"
+                    value={editUserData.role}
+                    onChange={handleEditChange}
+                  >
+                    <option value="admin">Admin</option>
+                    <option value="teacher">Teacher</option>
+                    <option value="student">Student</option>
+                  </select>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowEditModal(false)}
+                >
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={handleSaveEdit}
+                >
+                  Lưu thay đổi
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <HustFooter />
     </div>
   );

@@ -1,4 +1,4 @@
-// src/pages/admin/SubjectManagerPage.jsx
+
 import React, { useState, useEffect } from "react";
 import api from "../../api";
 import HustFooter from "../../components/HustFooter";
@@ -8,18 +8,23 @@ import Pagination from "../../components/Pagination";
 function SubjectManagerPage() {
   const [subjects, setSubjects] = useState([]);
   const [form, setForm] = useState({ ten_mon: "", ma_mon: "" });
-
-  // State phân trang và tìm kiếm cho môn học
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [searchKeyword, setSearchKeyword] = useState("");
+
+  // State cho modal chỉnh sửa môn học
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [subjectToEdit, setSubjectToEdit] = useState(null);
+  const [editSubjectData, setEditSubjectData] = useState({
+    ten_mon: "",
+    ma_mon: "",
+  });
 
   const fetchSubjects = async () => {
     try {
       const res = await api.get("/subjects", {
         params: { page: currentPage, limit: 6, keyword: searchKeyword },
       });
-      // Giả sử API trả về { data: { data: [...], meta: {...} } }
       setSubjects(res.data.data);
       setTotalPages(res.data.meta.totalPages);
     } catch (err) {
@@ -53,6 +58,32 @@ function SubjectManagerPage() {
     } catch (err) {
       console.error(err);
       alert("Xoá thất bại");
+    }
+  };
+
+  // --- Phần chỉnh sửa môn học ---
+  const handleEditClick = (subject) => {
+    setSubjectToEdit(subject);
+    setEditSubjectData({
+      ten_mon: subject.ten_mon,
+      ma_mon: subject.ma_mon,
+    });
+    setShowEditModal(true);
+  };
+
+  const handleEditChange = (e) => {
+    setEditSubjectData({ ...editSubjectData, [e.target.name]: e.target.value });
+  };
+
+  const handleSaveEdit = async () => {
+    try {
+      await api.put(`/subjects/${subjectToEdit.id}`, editSubjectData);
+      alert("Cập nhật môn học thành công!");
+      setShowEditModal(false);
+      fetchSubjects();
+    } catch (error) {
+      console.error(error);
+      alert("Lỗi cập nhật môn học");
     }
   };
 
@@ -144,6 +175,12 @@ function SubjectManagerPage() {
                   <td>{s.ma_mon}</td>
                   <td>
                     <button
+                      className="btn btn-sm btn-primary me-2"
+                      onClick={() => handleEditClick(s)}
+                    >
+                      <i className="bi bi-pencil-square"></i> Sửa
+                    </button>
+                    <button
                       className="btn btn-danger btn-sm"
                       onClick={() => handleDelete(s.id)}
                     >
@@ -161,6 +198,62 @@ function SubjectManagerPage() {
           />
         </div>
       </div>
+
+      {/* Modal chỉnh sửa môn học */}
+      {showEditModal && (
+        <div className="modal show d-block" tabIndex="-1">
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Chỉnh sửa Môn học</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowEditModal(false)}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <div className="mb-3">
+                  <label className="form-label">Tên môn</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    name="ten_mon"
+                    value={editSubjectData.ten_mon}
+                    onChange={handleEditChange}
+                  />
+                </div>
+                <div className="mb-3">
+                  <label className="form-label">Mã môn</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    name="ma_mon"
+                    value={editSubjectData.ma_mon}
+                    onChange={handleEditChange}
+                  />
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowEditModal(false)}
+                >
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={handleSaveEdit}
+                >
+                  Lưu thay đổi
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <HustFooter />
     </div>

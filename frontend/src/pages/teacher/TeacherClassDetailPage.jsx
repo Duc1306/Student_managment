@@ -23,6 +23,19 @@ function TeacherClassDetailPage() {
   // studentId -> status
   const [attendanceData, setAttendanceData] = useState({});
 
+  // State để hiển thị modal chỉnh sửa
+  const [showEditModal, setShowEditModal] = useState(false);
+  // Học sinh đang được chỉnh sửa (đối tượng chứa thông tin học sinh)
+  const [studentToEdit, setStudentToEdit] = useState(null);
+  // Dữ liệu form chỉnh sửa, sử dụng làm state cục bộ trong modal
+  const [editFormData, setEditFormData] = useState({
+    ho_ten: "",
+    ma_sinh_vien: "",
+    ngay_sinh: "",
+    dia_chi: "",
+    password: "",
+  });
+
   // Lấy thông tin lớp và danh sách học sinh của lớp
   const fetchClassData = () => {
     api
@@ -134,6 +147,43 @@ function TeacherClassDetailPage() {
     (student) => !students.some((s) => s.id === student.id)
   );
 
+  // Khi bấm "Sửa" cho một học sinh, mở modal và điền sẵn thông tin học sinh đó
+  const handleEditClick = (student) => {
+    setStudentToEdit(student);
+    setEditFormData({
+      ho_ten: student.ho_ten || "",
+      ma_sinh_vien: student.ma_sinh_vien || "",
+      ngay_sinh: student.ngay_sinh || "",
+      dia_chi: student.dia_chi || "",
+      password: "", // Để trống nếu không muốn hiển thị mật khẩu hiện tại
+    });
+    setShowEditModal(true);
+  };
+
+  // Xử lý thay đổi dữ liệu trong form chỉnh sửa
+  const handleEditFormChange = (e) => {
+    setEditFormData({
+      ...editFormData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  // Khi lưu chỉnh sửa
+  const handleSaveEdit = () => {
+    if (!studentToEdit) return;
+    api
+      .put(`/students/${studentToEdit.id}`, editFormData)
+      .then((res) => {
+        alert("Cập nhật học sinh thành công!");
+        setShowEditModal(false);
+        fetchClassData(); // Cập nhật lại danh sách sau khi chỉnh sửa
+      })
+      .catch((err) => {
+        console.error(err);
+        alert(err.response?.data?.error || "Lỗi cập nhật học sinh");
+      });
+  };
+
   // Đăng xuất
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -209,6 +259,12 @@ function TeacherClassDetailPage() {
                   </td>
                   <td>
                     <button
+                      className="btn btn-sm btn-primary me-2"
+                      onClick={() => handleEditClick(student)}
+                    >
+                      <i className="bi bi-pencil-square"></i> Sửa
+                    </button>
+                    <button
                       className="btn btn-sm btn-danger"
                       onClick={() => handleRemoveStudent(student.id)}
                     >
@@ -234,6 +290,93 @@ function TeacherClassDetailPage() {
           </button>
         </div>
       </div>
+
+      {/* Modal chỉnh sửa thông tin học sinh */}
+      {showEditModal && (
+        <div className="modal show d-block" tabIndex="-1">
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Chỉnh sửa thông tin học sinh</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowEditModal(false)}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <div className="mb-2">
+                  <label className="form-label">Họ tên</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    name="ho_ten"
+                    value={editFormData.ho_ten}
+                    onChange={handleEditFormChange}
+                  />
+                </div>
+                <div className="mb-2">
+                  <label className="form-label">Mã sinh viên</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    name="ma_sinh_vien"
+                    value={editFormData.ma_sinh_vien}
+                    onChange={handleEditFormChange}
+                  />
+                </div>
+                <div className="mb-2">
+                  <label className="form-label">Ngày sinh</label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    name="ngay_sinh"
+                    value={editFormData.ngay_sinh}
+                    onChange={handleEditFormChange}
+                  />
+                </div>
+                <div className="mb-2">
+                  <label className="form-label">Địa chỉ</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    name="dia_chi"
+                    value={editFormData.dia_chi}
+                    onChange={handleEditFormChange}
+                  />
+                </div>
+                <div className="mb-2">
+                  <label className="form-label">Mật khẩu</label>
+                  <input
+                    type="password"
+                    className="form-control"
+                    name="password"
+                    placeholder="Để trống nếu không thay đổi"
+                    value={editFormData.password}
+                    onChange={handleEditFormChange}
+                  />
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowEditModal(false)}
+                >
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={handleSaveEdit}
+                >
+                  Lưu thay đổi
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Phần thêm học sinh bằng cách chọn từ danh sách */}
       <div className="card mb-4">
