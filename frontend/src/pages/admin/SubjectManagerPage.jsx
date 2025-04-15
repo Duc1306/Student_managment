@@ -1,16 +1,27 @@
+// src/pages/admin/SubjectManagerPage.jsx
 import React, { useState, useEffect } from "react";
 import api from "../../api";
 import HustFooter from "../../components/HustFooter";
 import HustHeader from "../../components/HustHeader";
+import Pagination from "../../components/Pagination";
 
 function SubjectManagerPage() {
   const [subjects, setSubjects] = useState([]);
   const [form, setForm] = useState({ ten_mon: "", ma_mon: "" });
 
+  // State phân trang và tìm kiếm cho môn học
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [searchKeyword, setSearchKeyword] = useState("");
+
   const fetchSubjects = async () => {
     try {
-      const res = await api.get("/subjects");
-      setSubjects(res.data);
+      const res = await api.get("/subjects", {
+        params: { page: currentPage, limit: 6, keyword: searchKeyword },
+      });
+      // Giả sử API trả về { data: { data: [...], meta: {...} } }
+      setSubjects(res.data.data);
+      setTotalPages(res.data.meta.totalPages);
     } catch (err) {
       console.error(err);
       alert("Lỗi tải môn học");
@@ -19,13 +30,14 @@ function SubjectManagerPage() {
 
   useEffect(() => {
     fetchSubjects();
-  }, []);
+  }, [currentPage, searchKeyword]);
 
   const handleCreate = async () => {
     try {
       await api.post("/subjects", form);
       alert("Tạo môn thành công!");
       setForm({ ten_mon: "", ma_mon: "" });
+      setCurrentPage(1);
       fetchSubjects();
     } catch (err) {
       console.error(err);
@@ -42,6 +54,16 @@ function SubjectManagerPage() {
       console.error(err);
       alert("Xoá thất bại");
     }
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    setCurrentPage(1);
+    fetchSubjects();
+  };
+
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
   };
 
   return (
@@ -81,6 +103,25 @@ function SubjectManagerPage() {
         </div>
       </div>
 
+      <form onSubmit={handleSearch} className="mb-3">
+        <div className="row">
+          <div className="col-md-4">
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Tìm kiếm theo tên môn..."
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+            />
+          </div>
+          <div className="col-md-2">
+            <button type="submit" className="btn btn-hust">
+              Tìm kiếm
+            </button>
+          </div>
+        </div>
+      </form>
+
       <div className="card shadow-sm">
         <div className="card-body">
           <h5>
@@ -113,6 +154,11 @@ function SubjectManagerPage() {
               ))}
             </tbody>
           </table>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
         </div>
       </div>
 

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import api from "../../api";
 import HustFooter from "../../components/HustFooter";
 import HustHeader from "../../components/HustHeader";
+import useFetchData from "../../hooks/useFetchData";
+import Pagination from "../../components/Pagination";  
 
 function UserManagerPage() {
   const [users, setUsers] = useState([]);
@@ -10,6 +12,23 @@ function UserManagerPage() {
     password: "",
     role: "student",
   });
+
+  const [keyword, setKeyword] = useState("");
+  const {
+    data: usersData,
+    meta,
+    loading,
+    refetch,
+  } = useFetchData("/users", { keyword, page: 1, limit: 6 });
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    refetch({ keyword, page: 1 });
+  };
+
+  const handlePageChange = (newPage) => {
+    refetch({ page: newPage , keyword });
+  };
 
   const fetchUsers = async () => {
     try {
@@ -57,7 +76,6 @@ function UserManagerPage() {
         subtitle="Tạo, chỉnh sửa hoặc xoá tài khoản người dùng"
         icon="people-fill" /* Bootstrap icon */
       />
-
       <div className="card shadow-sm mb-4">
         <div className="card-body">
           <h5>
@@ -104,7 +122,6 @@ function UserManagerPage() {
           </button>
         </div>
       </div>
-
       <div className="card shadow-sm">
         <div className="card-body">
           <h5>
@@ -120,7 +137,7 @@ function UserManagerPage() {
               </tr>
             </thead>
             <tbody>
-              {users.map((u) => (
+              {usersData.map((u) => (
                 <tr key={u.id}>
                   <td>{u.id}</td>
                   <td>{u.username}</td>
@@ -137,9 +154,16 @@ function UserManagerPage() {
               ))}
             </tbody>
           </table>
+          {meta && (
+            <Pagination
+              currentPage={meta.page}
+              totalPages={meta.totalPages}
+              onPageChange={handlePageChange}
+            />
+          )}
         </div>
       </div>
-
+     
       {/* Footer */}
       <HustFooter />
     </div>

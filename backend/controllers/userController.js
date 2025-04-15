@@ -1,18 +1,36 @@
-
-const { User,Student, Teacher } = require("../models");
-
+const { User, Student, Teacher } = require("../models");
+const {
+  createPagination,
+  createSearchCondition,
+} = require("../utils/pagination");
 
 module.exports = {
   // Lấy danh sách user (nếu cần)
   getAll: async (req, res) => {
     try {
-      const users = await User.findAll();
-      res.json(users);
+      const { page, limit, offset } = createPagination(req);
+      const keyword = req.query.keyword || "";
+      const whereCondition = createSearchCondition("username", keyword);
+
+      const { count, rows } = await User.findAndCountAll({
+        where: whereCondition,
+        limit,
+        offset,
+      });
+
+      res.json({
+        data: rows,
+        meta: {
+          total: count,
+          page,
+          limit,
+          totalPages: Math.ceil(count / limit),
+        },
+      });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
   },
-
   // Tạo user
   createUser: async (req, res) => {
     try {

@@ -1,5 +1,7 @@
 
 const { Class, Student, User, Teacher, Subject } = require("../models");
+const { Op } = require("sequelize");
+
 
 module.exports = {
   getAll: async (req, res) => {
@@ -8,7 +10,7 @@ module.exports = {
       let whereCondition = {};
 
       if (role === "teacher") {
-        // Tìm teacher.id =?
+        // Tìm teacher dựa vào user_id
         const teacher = await Teacher.findOne({
           where: { user_id: req.user.userId },
         });
@@ -16,27 +18,49 @@ module.exports = {
           return res.status(403).json({ error: "Teacher not found" });
         }
         whereCondition = { teacher_id: teacher.id };
+        const classes = await Class.findAll({
+          where: whereCondition,
+          include: [Subject, Teacher],
+        });
+        return res.json(classes);
       } else if (role === "student") {
-        // Lấy student
+        // Lấy student và trả về danh sách lớp mà student đang học
         const student = await Student.findOne({
           where: { user_id: req.user.userId },
         });
         if (!student) {
           return res.status(403).json({ error: "Student not found" });
         }
-
         const classes = await student.getClasses({
           include: [Subject, Teacher],
         });
         return res.json(classes);
-      }
-      // admin => whereCondition rỗng => lấy hết
+      } else if (role === "admin") {
+        // Cho admin, thêm phân trang và tìm kiếm theo tên lớp
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 6;
+        const offset = (page - 1) * limit;
+        const keyword = req.query.keyword || "";
 
-      const list = await Class.findAll({
-        where: whereCondition,
-        include: [Subject, Teacher],
-      });
-      res.json(list);
+        if (keyword) {
+          whereCondition.ten_lop = { [Op.like]: `%${keyword}%` };
+        }
+        const { count, rows } = await Class.findAndCountAll({
+          where: whereCondition,
+          include: [Subject, Teacher],
+          limit,
+          offset,
+        });
+        return res.json({
+          data: rows,
+          meta: {
+            total: count,
+            page,
+            limit,
+            totalPages: Math.ceil(count / limit),
+          },
+        });
+      }
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -190,12 +214,10 @@ module.exports = {
           });
         }
 
-       
-
         // Tạo tài khoản user cho học sinh với role là 'student'
         const newUser = await User.create({
           username: ma_sinh_vien, // Dùng ma_sinh_vien làm username
-          password: password , // Mật khẩu đã được mã hóa
+          password: password, // Mật khẩu đã được mã hóa
           role: "student",
         });
 

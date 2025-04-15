@@ -1,11 +1,34 @@
 
 const { Subject } = require("../models");
+const { Op } = require("sequelize");
 
 module.exports = {
   getAll: async (req, res) => {
     try {
-      const subjects = await Subject.findAll();
-      res.json(subjects);
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 6;
+      const offset = (page - 1) * limit;
+      const keyword = req.query.keyword || "";
+
+      const whereCondition = keyword
+        ? { ten_mon: { [Op.like]: `%${keyword}%` } }
+        : {};
+
+      const { count, rows } = await Subject.findAndCountAll({
+        where: whereCondition,
+        limit,
+        offset,
+      });
+
+      res.json({
+        data: rows,
+        meta: {
+          total: count,
+          page,
+          limit,
+          totalPages: Math.ceil(count / limit),
+        },
+      });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }

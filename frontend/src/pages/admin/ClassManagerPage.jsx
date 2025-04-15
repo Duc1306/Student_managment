@@ -1,15 +1,15 @@
-// attendance-frontend/src/pages/admin/ClassManagerPage.js
+// src/pages/admin/ClassManagerPage.jsx
 import React, { useEffect, useState } from "react";
 import HustHeader from "../../components/HustHeader";
 import HustFooter from "../../components/HustFooter";
+import Pagination from "../../components/Pagination";
 import api from "../../api";
 
 function ClassManagerPage() {
   const [classes, setClasses] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [teachers, setTeachers] = useState([]);
-
-  // Form để tạo lớp
+  // Form tạo lớp
   const [newClass, setNewClass] = useState({
     ten_lop: "",
     ma_lop: "",
@@ -17,30 +17,48 @@ function ClassManagerPage() {
     teacher_id: "",
   });
 
-  // Lấy danh sách lớp, môn, và giáo viên
-  const fetchData = async () => {
+  // State phân trang và tìm kiếm cho lớp
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [searchKeyword, setSearchKeyword] = useState("");
+
+  // Hàm tải teachers và subjects (giả sử số lượng ở đây nhỏ)
+  const fetchSubjectsAndTeachers = async () => {
     try {
-      // Giả sử API:
-      //  GET /classes => DS lớp
-      //  GET /subjects => DS môn
-      //  GET /teachers => DS giáo viên
-      const [resClass, resSubject, resTeacher] = await Promise.all([
-        api.get("/classes"),
+      const [resSubject, resTeacher] = await Promise.all([
         api.get("/subjects"),
         api.get("/teachers"),
       ]);
-      setClasses(resClass.data);
-      setSubjects(resSubject.data);
+      setSubjects(resSubject.data.data);
       setTeachers(resTeacher.data);
     } catch (error) {
       console.error(error);
-      alert("Lỗi tải dữ liệu");
+      alert("Lỗi tải dữ liệu môn hoặc giáo viên");
     }
+  };
+
+  // Hàm tải lớp với phân trang và tìm kiếm
+  const fetchClasses = async () => {
+    try {
+      const resClass = await api.get("/classes", {
+        params: { page: currentPage, limit: 6, keyword: searchKeyword },
+      });
+      // Giả sử API trả về { data: { data: [...], meta: {...} } }
+      setClasses(resClass.data.data);
+      setTotalPages(resClass.data.meta.totalPages);
+    } catch (error) {
+      console.error(error);
+      alert("Lỗi tải dữ liệu lớp");
+    }
+  };
+
+  const fetchData = async () => {
+    await Promise.all([fetchClasses(), fetchSubjectsAndTeachers()]);
   };
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [currentPage, searchKeyword]);
 
   const handleCreateClass = async () => {
     try {
@@ -52,7 +70,6 @@ function ClassManagerPage() {
       ) {
         return alert("Hãy điền đủ thông tin lớp");
       }
-      // POST /classes => chỉ admin mới gọi được (theo backend)
       await api.post("/classes", newClass);
       alert("Tạo lớp thành công!");
       setNewClass({
@@ -61,7 +78,7 @@ function ClassManagerPage() {
         subject_id: "",
         teacher_id: "",
       });
-      fetchData();
+      fetchClasses();
     } catch (error) {
       console.error(error);
       alert("Tạo lớp thất bại");
@@ -71,22 +88,30 @@ function ClassManagerPage() {
   const handleDeleteClass = async (classId) => {
     if (!window.confirm("Xoá lớp này?")) return;
     try {
-      // DELETE /classes/:id
       await api.delete(`/classes/${classId}`);
-      fetchData();
+      fetchClasses();
     } catch (error) {
       console.error(error);
       alert("Xoá lớp thất bại");
     }
   };
 
+  const handleSearch = (e) => {
+    e.preventDefault();
+    setCurrentPage(1);
+    fetchClasses();
+  };
+
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+  };
+
   return (
     <div className="container my-4">
-      {/* Header */}
       <HustHeader
         title="Quản lý Lớp"
         subtitle="Tạo, chỉnh sửa, hoặc xoá lớp học"
-        icon="diagram-3" // 'bi bi-diagram-3'
+        icon="diagram-3"
       />
 
       <div className="card mb-4">
@@ -160,6 +185,26 @@ function ClassManagerPage() {
         </div>
       </div>
 
+      {/* Tìm kiếm lớp */}
+      <form onSubmit={handleSearch} className="mb-3">
+        <div className="row">
+          <div className="col-md-4">
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Tìm kiếm lớp theo tên..."
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+            />
+          </div>
+          <div className="col-md-2">
+            <button type="submit" className="btn btn-hust">
+              Tìm kiếm
+            </button>
+          </div>
+        </div>
+      </form>
+
       <div className="card">
         <div className="card-body">
           <h5>
@@ -196,10 +241,14 @@ function ClassManagerPage() {
               ))}
             </tbody>
           </table>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
         </div>
       </div>
 
-      {/* Footer */}
       <HustFooter />
     </div>
   );
