@@ -14,6 +14,7 @@ import StudentDashboardPage from "./pages/student/StudentDashboardPage";
 import LoginPage from "./pages/auth/LoginPage";
 import AdminReportPage from "./pages/admin/AdminReportPage";
 import TeacherReportPage from "./pages/teacher/TeacherReportPage";
+import StudentClassDetailPage from "./pages/student/StudentClassDetailPage";
 
 function App() {
   // Dark Mode
@@ -64,6 +65,7 @@ function App() {
 
         {/* Student */}
         <Route path="/student" element={<StudentDashboardPage />} />
+        <Route path="/student/class/:id" element={<StudentClassDetailPage />} />
       </Routes>
     </BrowserRouter>
   );

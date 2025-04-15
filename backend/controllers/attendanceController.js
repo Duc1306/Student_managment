@@ -18,6 +18,10 @@ module.exports = {
           return res.status(404).json({ error: "Student not found" });
         }
         filter.student_id = student.id;
+        // Nếu có query param classId, thêm lọc theo lớp
+        if (req.query.classId) {
+          filter.class_id = req.query.classId;
+        }
       } else {
         // Đối với teacher hoặc admin, cho phép lọc theo query params
         const { classId, date } = req.query;

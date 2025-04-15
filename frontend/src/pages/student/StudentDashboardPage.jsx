@@ -1,5 +1,6 @@
 
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import api from "../../api";
 
 function StudentDashboardPage() {
@@ -27,14 +28,16 @@ function StudentDashboardPage() {
           <h5>Các lớp đang học</h5>
           <div className="row">
             {classes.map((cls) => (
-              <div className="col-md-4 mb-3" key={cls.id}>
-                <div className="card card-highlight">
-                  <div className="card-body">
-                    <h6 className="card-title">{cls.ten_lop}</h6>
-                    <p className="card-text">
-                      Môn: {cls.Subject ? cls.Subject.ten_mon : ""}
-                    </p>
-                  </div>
+              <div key={cls.id} className="card mb-3">
+                <div className="card-body">
+                  <h6>{cls.ten_lop}</h6>
+                  <p>Môn: {cls.Subject ? cls.Subject.ten_mon : ""}</p>
+                  <Link
+                    to={`/student/class/${cls.id}`}
+                    className="btn btn-primary"
+                  >
+                    Xem chi tiết lớp
+                  </Link>
                 </div>
               </div>
             ))}
@@ -42,45 +45,7 @@ function StudentDashboardPage() {
         </div>
       </div>
 
-      <div className="card">
-        <div className="card-body">
-          <h5>Thông tin điểm danh</h5>
-          <table className="table table-bordered">
-            <thead>
-              <tr>
-                <th>Ngày</th>
-                <th>Lớp</th>
-                <th>Trạng thái</th>
-              </tr>
-            </thead>
-            <tbody>
-              {attendance.map((a, idx) => (
-                <tr key={idx}>
-                  <td>{a.date}</td>
-                  <td>{a.Class ? a.Class.ten_lop : ""}</td>
-                  <td>
-                    <span
-                      className={`badge ${
-                        a.status === "present"
-                          ? "bg-success"
-                          : a.status === "late"
-                          ? "bg-warning"
-                          : "bg-danger"
-                      }`}
-                    >
-                      {a.status === "present"
-                        ? "Có mặt"
-                        : a.status === "late"
-                        ? "Muộn"
-                        : "Vắng"}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      
     </div>
   );
 }
