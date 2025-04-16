@@ -4,6 +4,8 @@ const router = express.Router();
 const classController = require("../controllers/classController");
 const authMiddleware = require("../middlewares/authMiddleware");
 
+
+
 router.use(authMiddleware);
 
 // GET danh sách lớp (với lọc: teacher/student chỉ thấy lớp của mình)
@@ -45,5 +47,6 @@ router.delete("/:id/students/:studentId", (req, res) => {
     return res.status(403).json({ error: "Teacher only" });
   classController.removeStudentFromClass(req, res);
 });
+router.get("/export", classController.exportClasses);
 
 module.exports = router;

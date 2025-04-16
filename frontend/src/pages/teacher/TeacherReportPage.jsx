@@ -10,8 +10,8 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-import HustHeader from "../../components/HustHeader";
-import HustFooter from "../../components/HustFooter";
+import HustHeader from "../../components/layout/HustHeader";
+import HustFooter from "../../components/layout/HustFooter";
 
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
@@ -60,6 +60,8 @@ function TeacherReportPage() {
           onChange={(e) => setDate(e.target.value)}
         />
       </div>
+
+      
       {reportData ? (
         <div className="card mb-4">
           <div className="card-body">

@@ -2,6 +2,7 @@
     const router = express.Router();
     const studentController = require("../controllers/studentController");
     const authMiddleware = require("../middlewares/authMiddleware");
+    const upload = require("../middlewares/upload");
 
     // Định nghĩa route GET /students
     router.use(authMiddleware);
@@ -10,5 +11,10 @@
       
       studentController.updateStudent(req, res);
     });
+    router.post(
+      "/import",
+      upload.single("file"),
+      studentController.importStudents
+    );
 
     module.exports = router;

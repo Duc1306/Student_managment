@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import HustNavbar from "./components/HustNavbar";
+import HustNavbar from "./components/layout/HustNavbar";
 
 import "./App.css";
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage";

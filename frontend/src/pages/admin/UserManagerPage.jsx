@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import api from "../../api";
-import HustFooter from "../../components/HustFooter";
-import HustHeader from "../../components/HustHeader";
+import HustHeader from "../../components/layout/HustHeader";
+import HustFooter from "../../components/layout/HustFooter";
+
+import Pagination from "../../components/pagination/Pagination";
 import useFetchData from "../../hooks/useFetchData";
-import Pagination from "../../components/Pagination";
 
 function UserManagerPage() {
   const [users, setUsers] = useState([]);

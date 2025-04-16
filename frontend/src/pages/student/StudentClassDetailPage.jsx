@@ -10,8 +10,8 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-import HustHeader from "../../components/HustHeader";
-import HustFooter from "../../components/HustFooter";
+import HustHeader from "../../components/layout/HustHeader";
+import HustFooter from "../../components/layout/HustFooter";
 
 // Đăng ký các thành phần cần thiết của ChartJS
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);

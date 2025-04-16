@@ -12,6 +12,7 @@ const teacherRoutes = require("./routes/teacherRoutes");
 const reportRoutes = require("./routes/reportRoutes");
 const studentRoutes = require("./routes/studentRoutes");
 
+
 const app = express();
 app.use(
   cors({

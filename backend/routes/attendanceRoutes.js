@@ -19,5 +19,6 @@ router.get("/", attendanceController.getAttendance);
 
 // Route GET /attendance/report
 router.get("/report", attendanceController.report);
+router.get("/export", attendanceController.exportAttendance);
 
 module.exports = router;

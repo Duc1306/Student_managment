@@ -1,9 +1,12 @@
 
 import React, { useEffect, useState } from "react";
-import HustHeader from "../../components/HustHeader";
-import HustFooter from "../../components/HustFooter";
-import Pagination from "../../components/Pagination";
+import HustHeader from "../../components/layout/HustHeader";
+import HustFooter from "../../components/layout/HustFooter";
+import Pagination from "../../components/pagination/Pagination";
+import ExportClasses from "../../components/export/ExportClasses"; 
+
 import api from "../../api";
+
 
 function ClassManagerPage() {
   const [classes, setClasses] = useState([]);
@@ -284,6 +287,11 @@ function ClassManagerPage() {
             totalPages={totalPages}
             onPageChange={handlePageChange}
           />
+
+          <div className="d-flex justify-content-end mb-3">
+            <ExportClasses />
+          </div>
+         
         </div>
       </div>
 

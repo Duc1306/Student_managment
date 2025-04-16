@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import HustHeader from "../../components/HustHeader";
-import HustFooter from "../../components/HustFooter";
+import HustHeader from "../../components/layout/HustHeader";
+import HustFooter from "../../components/layout/HustFooter";
+import ExportAttendance  from "../../components/export/ExportAttendance";
+import ImportStudents from "../../components/import/ImportStudents";
 import api from "../../api";
 
 function TeacherClassDetailPage() {
@@ -184,6 +186,12 @@ function TeacherClassDetailPage() {
       });
   };
 
+  const handleImportSuccess = () => {
+    fetchClassData();
+    fetchAllStudents();
+  };
+  
+
   // Đăng xuất
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -220,12 +228,20 @@ function TeacherClassDetailPage() {
         </div>
       </div>
 
+      {/* Import học sinh */}
+      <div className="card mb-4">
+        <div className="card-body">
+          <ImportStudents onImportSuccess={handleImportSuccess} />
+        </div>
+      </div>
+
       {/* Bảng danh sách học sinh của lớp */}
       <div className="card mb-4">
         <div className="card-body">
           <h5>
             <i className="bi bi-people me-1"></i>Danh sách học sinh
           </h5>
+
           <table className="table table-bordered">
             <thead>
               <tr>
@@ -249,7 +265,10 @@ function TeacherClassDetailPage() {
                       className="form-select"
                       value={attendanceData[student.id] || "present"}
                       onChange={(e) =>
-                        handleStatusChange(student.id, e.target.value)
+                        setAttendanceData((prev) => ({
+                          ...prev,
+                          [student.id]: e.target.value,
+                        }))
                       }
                     >
                       <option value="present">Có mặt</option>
@@ -288,6 +307,14 @@ function TeacherClassDetailPage() {
           >
             <i className="bi bi-bar-chart me-1"></i>Xem báo cáo
           </button>
+
+          <div className="d-flex justify-content-end mb-3">
+            {/* Giả sử có state "date" chứa ngày điểm danh và "classDetail" chứa thông tin lớp */}
+            <ExportAttendance
+              classId={classDetail && classDetail.classId}
+              date={date}
+            />
+          </div>
         </div>
       </div>
 

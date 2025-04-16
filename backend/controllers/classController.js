@@ -1,7 +1,6 @@
-
 const { Class, Student, User, Teacher, Subject } = require("../models");
 const { Op } = require("sequelize");
-
+const xlsx = require("xlsx");
 
 module.exports = {
   getAll: async (req, res) => {
@@ -289,6 +288,49 @@ module.exports = {
       res.json({ message: "Student removed successfully" });
     } catch (err) {
       res.status(500).json({ error: err.message });
+    }
+  },
+  exportClasses: async (req, res) => {
+    try {
+      // Lấy danh sách lớp từ database
+      const classes = await Class.findAll({
+        include: [
+          { model: Subject, as: "Subject" },
+          { model: Teacher, as: "Teacher" },
+        ],
+      });
+
+      // Chuẩn bị dữ liệu export dưới dạng mảng đối tượng
+      const data = classes.map((cls) => ({
+        ID: cls.id,
+        TenLop: cls.ten_lop,
+        MaLop: cls.ma_lop,
+        Subject: cls.subject
+          ? `${cls.subject.ten_mon} (${cls.subject.ma_mon})`
+          : "",
+        Teacher: cls.teacher ? `${cls.teacher.ho_ten}` : "",
+      }));
+
+      // Tạo workbook và sheet
+      const worksheet = xlsx.utils.json_to_sheet(data);
+      const workbook = xlsx.utils.book_new();
+      xlsx.utils.book_append_sheet(workbook, worksheet, "Classes");
+
+      // Ghi file vào buffer
+      const buffer = xlsx.write(workbook, { bookType: "xlsx", type: "buffer" });
+
+      res.setHeader(
+        "Content-Disposition",
+        "attachment; filename=class_list.xlsx"
+      );
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      );
+      res.send(buffer);
+    } catch (error) {
+      console.error("Lỗi export lớp:", error);
+      res.status(500).json({ error: "Lỗi export dữ liệu" });
     }
   },
 };

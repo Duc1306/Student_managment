@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../api";
-import HustHeader from "../../components/HustHeader";
-import HustFooter from "../../components/HustFooter";
+import HustHeader from "../../components/layout/HustHeader";
+import HustFooter from "../../components/layout/HustFooter";
 
 function TeacherDashboardPage() {
   const navigate = useNavigate();

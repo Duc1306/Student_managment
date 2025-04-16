@@ -1,5 +1,5 @@
-
 const { Attendance, Student, Class } = require("../models");
+const xlsx = require("xlsx");
 
 module.exports = {
   // API GET /attendance
@@ -84,6 +84,43 @@ module.exports = {
       res.json(summary);
     } catch (err) {
       res.status(500).json({ error: err.message });
+    }
+  },
+  exportAttendance: async (req, res) => {
+    try {
+      // Lấy thông tin điểm danh của lớp, dựa trên query param hoặc đường dẫn. Ví dụ:
+      const { classId, date } = req.query; // lấy từ query string
+      // Giả sử bạn có một mối quan hệ giữa Attendance và Student
+      const attendanceRecords = await Attendance.findAll({
+        where: { class_id: classId, date },
+        include: [ Student],
+      });
+
+      const data = attendanceRecords.map((record) => ({
+        StudentID: record.Student ? record.Student.id : "",
+        HoTen: record.Student ? record.Student.ho_ten : "",
+        Status: record.status,
+        Date: record.date,
+      }));
+
+      const worksheet = xlsx.utils.json_to_sheet(data);
+      const workbook = xlsx.utils.book_new();
+      xlsx.utils.book_append_sheet(workbook, worksheet, "Attendance");
+
+      const buffer = xlsx.write(workbook, { bookType: "xlsx", type: "buffer" });
+
+      res.setHeader(
+        "Content-Disposition",
+        "attachment; filename=attendance.xlsx"
+      );
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      );
+      res.send(buffer);
+    } catch (error) {
+      console.error("Lỗi export attendance:", error);
+      res.status(500).json({ error: "Lỗi export dữ liệu" });
     }
   },
 };
