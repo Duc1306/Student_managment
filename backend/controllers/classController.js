@@ -1,6 +1,14 @@
-const { Class, Student, User, Teacher, Subject } = require("../models");
+const {
+  Class,
+  Student,
+  User,
+  Teacher,
+  Subject,
+  StudentClass,
+} = require("../models");
 const { Op } = require("sequelize");
 const xlsx = require("xlsx");
+const bcrypt = require("bcryptjs");
 
 module.exports = {
   getAll: async (req, res) => {
@@ -333,4 +341,46 @@ module.exports = {
       res.status(500).json({ error: "Lỗi export dữ liệu" });
     }
   },
+
+  importStudents: async (req, res, next) => {
+  const classId = req.params.id;
+  if (!req.file) return res.status(400).json({ error: 'File không được gửi lên' });
+  const workbook = xlsx.readFile(req.file.path);
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  const rows = xlsx.utils.sheet_to_json(sheet);
+  try {
+    // 1. Tạo (hoặc tìm) user + student
+    const students = await Promise.all(rows.map(async row => {
+      const [user] = await User.findOrCreate({
+        where: { username: row.ma_sinh_vien },
+        defaults: {
+          password: await bcrypt.hash(row.password, 10),
+          role: 'student'
+        }
+      });
+      const [student] = await Student.findOrCreate({
+        where: { ma_sinh_vien: row.ma_sinh_vien },
+        defaults: {
+          user_id: user.id,
+          ho_ten: row.ho_ten,
+          ngay_sinh: row.ngay_sinh,
+          dia_chi: row.dia_chi
+        }
+      });
+      return student;
+    }));
+    const foundClass = await Class.findByPk(classId);
+    if (!foundClass) return res.status(404).json({ error: "Class not found" });
+
+    // Thêm toàn bộ students vào class, Sequelize tự sinh JOIN table student_class
+    await foundClass.addStudents(students);
+    // 3. Trả về danh sách mới
+    const updated = await foundClass.getStudents({
+      include: [{ model: User, attributes: ["username"] }],
+    });
+    res.json({ success: true, students: updated });
+  } catch (err) {
+    next(err);
+  }
+}
 };

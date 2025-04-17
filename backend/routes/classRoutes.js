@@ -3,7 +3,7 @@ const express = require("express");
 const router = express.Router();
 const classController = require("../controllers/classController");
 const authMiddleware = require("../middlewares/authMiddleware");
-
+const upload = require("../middlewares/upload");
 
 
 router.use(authMiddleware);
@@ -48,5 +48,10 @@ router.delete("/:id/students/:studentId", (req, res) => {
   classController.removeStudentFromClass(req, res);
 });
 router.get("/export", classController.exportClasses);
+router.post(
+  "/:id/import",
+  upload.single("file"),
+  classController.importStudents
+);
 
 module.exports = router;

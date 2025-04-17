@@ -231,7 +231,13 @@ function TeacherClassDetailPage() {
       {/* Import học sinh */}
       <div className="card mb-4">
         <div className="card-body">
-          <ImportStudents onImportSuccess={handleImportSuccess} />
+          <ImportStudents
+            classId={id}
+            onImportSuccess={() => {
+              fetchClassData();
+              fetchAllStudents();
+            }}
+          />
         </div>
       </div>
 
