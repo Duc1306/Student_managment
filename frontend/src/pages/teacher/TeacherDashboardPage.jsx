@@ -1,85 +1,65 @@
+// src/pages/teacher/TeacherDashboardPage.jsx
 import React, { useEffect, useState } from "react";
+import { Layout, Card, Row, Col, Button, Typography } from "antd";
+import { ApartmentOutlined, BarChartOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
-import api from "../../api";
 import HustHeader from "../../components/layout/HustHeader";
 import HustFooter from "../../components/layout/HustFooter";
+import api from "../../api";
 
-function TeacherDashboardPage() {
+const { Content } = Layout;
+const { Title } = Typography;
+
+export default function TeacherDashboardPage() {
   const navigate = useNavigate();
   const [classes, setClasses] = useState([]);
 
-  const fetchClasses = async () => {
-    try {
-      const res = await api.get("/classes"); // Giả sử teacher => trả về lớp dạy
-      setClasses(res.data);
-    } catch (err) {
-      console.error(err);
-      alert("Lỗi tải danh sách lớp");
-    }
-  };
-
   useEffect(() => {
-    fetchClasses();
+    api
+      .get("/classes")
+      .then((res) => setClasses(res.data))
+      .catch(console.error);
   }, []);
 
-  const handleDetail = (classId) => {
-    navigate(`/teacher/class/${classId}`);
-  };
-
   return (
-    <div className="container my-4">
-      {/* Header */}
-      <HustHeader
-        title="Teacher Dashboard"
-        subtitle="Xem danh sách lớp đang phụ trách"
-        icon="person-workspace" /* icon = "bi bi-person-workspace" */
-      />
+    <Layout className="min-h-screen">
+      <Content className="container mx-auto py-6">
+        <HustHeader
+          title="Teacher Dashboard"
+          subtitle="Danh sách lớp bạn phụ trách"
+          icon={<ApartmentOutlined />}
+        />
 
-      <div className="card mb-4">
-        <div className="card-body">
-          <h5>
-            <i className="bi bi-grid me-1"></i>Danh sách lớp dạy
-          </h5>
-          {classes.length === 0 ? (
-            <p className="text-muted">Không có lớp nào.</p>
-          ) : (
-            <div className="row">
-              {classes.map((c) => (
-                <div className="col-md-4 mb-3" key={c.id}>
-                  <div className="card card-highlight h-100">
-                    <div className="card-body d-flex flex-column">
-                      <h6 className="card-title">{c.ten_lop}</h6>
-                      <p className="card-text flex-grow-1">
-                        Môn: {c.Subject ? c.Subject.ten_mon : "N/A"}
-                      </p>
-                      <div className="d-flex justify-content-between">
-                        <button
-                          className="btn btn-outline-danger"
-                          onClick={() => navigate(`/teacher/class/${c.id}`)}
-                        >
-                          <i className="bi bi-arrow-right-circle me-1"></i>
-                          Xem chi tiết
-                        </button>
-                        <button
-                          className="btn btn-outline-primary"
-                          onClick={() => navigate(`/teacher/report/${c.id}`)}
-                        >
-                          <i className="bi bi-bar-chart me-1"></i>
-                          Báo cáo
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
+        <Row gutter={[16, 16]} className="mt-4">
+          {classes.map((c) => (
+            <Col key={c.id} xs={24} sm={12} md={8} lg={6}>
+              <Card
+                title={c.ten_lop}
+                bordered={false}
+                className="h-full"
+                actions={[
+                  <Button
+                    type="link"
+                    onClick={() => navigate(`/teacher/class/${c.id}`)}
+                  >
+                    Chi tiết
+                  </Button>,
+                  <Button
+                    type="link"
+                    icon={<BarChartOutlined />}
+                    onClick={() => navigate(`/teacher/report/${c.id}`)}
+                  >
+                    Báo cáo
+                  </Button>,
+                ]}
+              >
+                <p>Môn học: {c.Subject?.ten_mon || "N/A"}</p>
+              </Card>
+            </Col>
+          ))}
+        </Row>
+      </Content>
       <HustFooter />
-    </div>
+    </Layout>
   );
 }
-
-export default TeacherDashboardPage;

@@ -1,11 +1,13 @@
 // src/components/ExportAttendance.jsx
-import React from "react";
+import { Button, message } from "antd";
+import { DownloadOutlined } from "@ant-design/icons";
 import api from "../../api";
 
 function ExportAttendance({ classId, date }) {
+   const [messageApi, contextHolder] = message.useMessage();
   const handleExport = async () => {
     if (!classId || !date) {
-      return alert("Vui lòng chọn lớp và ngày điểm danh");
+      return messageApi.error("Vui lòng chọn lớp và ngày điểm danh");
     }
     try {
       const res = await api.get("/attendance/export", {
@@ -21,14 +23,22 @@ function ExportAttendance({ classId, date }) {
       document.body.removeChild(link);
     } catch (error) {
       console.error(error);
-      alert("Lỗi export attendance");
+      messageApi.error("Lỗi export attendance");
     }
   };
 
   return (
-    <button className="btn btn-success" onClick={handleExport}>
-      Export Attendance
-    </button>
+    <>
+    {contextHolder}
+    <Button
+      type="primary"
+      icon={<DownloadOutlined />}
+      onClick={handleExport}
+      className="bg-green-600 border-green-600 hover:bg-green-700"
+    >
+      Xuất điểm danh
+    </Button>
+    </> 
   );
 }
 

@@ -1,35 +1,47 @@
+// src/pages/teacher/TeacherClassDetailPage.jsx
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import dayjs from "dayjs";
+import {
+  Layout,
+  Card,
+  Form,
+  DatePicker,
+  Select,
+  Button,
+  Table,
+  Modal,
+  Popconfirm,
+  Input,
+  message,
+} from "antd";
+import {
+  CalendarOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  UploadOutlined,
+} from "@ant-design/icons";
 import HustHeader from "../../components/layout/HustHeader";
 import HustFooter from "../../components/layout/HustFooter";
-import ExportAttendance  from "../../components/export/ExportAttendance";
 import ImportStudents from "../../components/import/ImportStudents";
+import ExportAttendance from "../../components/export/ExportAttendance";
 import api from "../../api";
 
-function TeacherClassDetailPage() {
-  const { id } = useParams(); // id của lớp
+const { Content } = Layout;
+const { Option } = Select;
+
+export default function TeacherClassDetailPage() {
+  const { id } = useParams();
   const navigate = useNavigate();
-
-  // Thông tin chi tiết lớp
+  const [messageApi, contextHolder] = message.useMessage();
   const [classDetail, setClassDetail] = useState(null);
-  // Danh sách học sinh đã có trong lớp
   const [students, setStudents] = useState([]);
-  // Danh sách tất cả học sinh từ DB
   const [allStudents, setAllStudents] = useState([]);
-  // Giá trị học sinh được chọn để thêm vào lớp (studentId)
-  const [selectedStudentId, setSelectedStudentId] = useState("");
-
-  // Ngày điểm danh
-  const [date, setDate] = useState("");
-
-  // studentId -> status
+  const [selectedStudentId, setSelectedStudentId] = useState(null);
+  const [attendanceDate, setAttendanceDate] = useState(null);
   const [attendanceData, setAttendanceData] = useState({});
-
-  // State để hiển thị modal chỉnh sửa
   const [showEditModal, setShowEditModal] = useState(false);
-  // Học sinh đang được chỉnh sửa (đối tượng chứa thông tin học sinh)
   const [studentToEdit, setStudentToEdit] = useState(null);
-  // Dữ liệu form chỉnh sửa, sử dụng làm state cục bộ trong modal
   const [editFormData, setEditFormData] = useState({
     ho_ten: "",
     ma_sinh_vien: "",
@@ -38,415 +50,256 @@ function TeacherClassDetailPage() {
     password: "",
   });
 
-  // Lấy thông tin lớp và danh sách học sinh của lớp
-  const fetchClassData = () => {
-    api
-      .get(`/classes/${id}/students`)
-      .then((res) => {
-        setClassDetail({
-          classId: res.data.classId,
-          className: res.data.className,
-          subject: res.data.subject,
-          teacher: res.data.teacher,
-        });
-        setStudents(res.data.students);
-        // Khởi tạo trạng thái điểm danh mặc định = 'present'
-        const initData = {};
-        res.data.students.forEach((student) => {
-          initData[student.id] = "present";
-        });
-        setAttendanceData(initData);
-      })
-      .catch((err) => {
-        console.error(err);
-        alert("Lỗi tải chi tiết lớp");
-      });
-  };
-
-  // Lấy danh sách tất cả học sinh từ database
-  const fetchAllStudents = () => {
-    api
-      .get("/students")
-      .then((res) => {
-        setAllStudents(res.data);
-      })
-      .catch((err) => {
-        console.error(err);
-        alert("Lỗi tải danh sách học sinh");
-      });
+  const fetchData = async () => {
+    try {
+      const res = await api.get(`/classes/${id}/students`);
+      const { classId, className, subject, teacher, students: studs } = res.data;
+      setClassDetail({ classId, className, subject, teacher });
+      setStudents(studs);
+      const initData = {};
+      studs.forEach((stu) => (initData[stu.id] = "present"));
+      setAttendanceData(initData);
+      const allRes = await api.get("/students");
+      setAllStudents(allRes.data);
+    } catch (err) {
+      messageApi.error("Lỗi tải dữ liệu lớp");
+    }
   };
 
   useEffect(() => {
-    fetchClassData();
-    fetchAllStudents();
+    fetchData();
   }, [id]);
 
-  // Xử lý đổi trạng thái điểm danh trong select
-  const handleStatusChange = (studentId, newStatus) => {
-    setAttendanceData((prev) => ({
-      ...prev,
-      [studentId]: newStatus,
-    }));
+  const handleStatusChange = (studentId, status) => {
+    setAttendanceData((prev) => ({ ...prev, [studentId]: status }));
   };
 
-  // Lưu điểm danh
-  const handleSaveAttendance = () => {
-    if (!date) {
-      alert("Vui lòng chọn ngày điểm danh");
+  const handleSaveAttendance = async () => {
+    if (!attendanceDate) {
+      messageApi.warning("Chọn ngày điểm danh");
       return;
     }
-    const attendanceList = students.map((student) => ({
-      studentId: student.id,
-      status: attendanceData[student.id] || "present",
+    const attendanceList = students.map((stu) => ({
+      studentId: stu.id,
+      status: attendanceData[stu.id],
     }));
-    api
-      .post("/attendance", { classId: id, date, attendanceList })
-      .then((res) => {
-        alert("Điểm danh thành công!");
-      })
-      .catch((err) => {
-        console.error(err);
-        alert("Lỗi điểm danh");
+    try {
+      await api.post("/attendance", {
+        classId: id,
+        date: attendanceDate.format("YYYY-MM-DD"),
+        attendanceList,
       });
+      messageApi.success("Điểm danh thành công!");
+    } catch {
+      messageApi.error("Lỗi điểm danh");
+    }
   };
 
-  // Xoá học sinh khỏi lớp
-  const handleRemoveStudent = (studentId) => {
-    if (!window.confirm("Bạn có chắc muốn xoá học sinh này khỏi lớp?")) return;
-    api
-      .delete(`/classes/${id}/students/${studentId}`)
-      .then((res) => {
-        alert("Học sinh đã được xoá");
-        fetchClassData();
-      })
-      .catch((err) => {
-        console.error(err);
-        alert(err.response?.data?.error || "Lỗi xoá học sinh");
-      });
+  const handleRemoveStudent = async (studentId) => {
+    try {
+      await api.delete(`/classes/${id}/students/${studentId}`);
+      messageApi.success("Xóa học sinh thành công");
+      fetchData();
+    } catch {
+      messageApi.error("Lỗi xóa học sinh");
+    }
   };
 
-  // Thêm học sinh từ danh sách có sẵn
-  const handleAddStudent = () => {
+  const handleAddStudent = async () => {
     if (!selectedStudentId) {
-      alert("Vui lòng chọn học sinh để thêm");
+      messageApi.warning("Chọn học sinh để thêm");
       return;
     }
-    api
-      .post(`/classes/${id}/students`, { studentId: selectedStudentId })
-      .then((res) => {
-        alert("Học sinh đã được thêm");
-        setSelectedStudentId(""); // Reset chọn lựa
-        fetchClassData();
-      })
-      .catch((err) => {
-        console.error(err);
-        alert(err.response?.data?.error || "Lỗi thêm học sinh");
-      });
+    try {
+      await api.post(`/classes/${id}/students`, { studentId: selectedStudentId });
+      messageApi.success("Thêm học sinh thành công");
+      fetchData();
+    } catch (err) {
+      messageApi.error(err.response?.data?.error || "Lỗi thêm học sinh");
+    }
   };
 
-  // Lọc ra danh sách học sinh chưa có trong lớp
-  const availableStudents = allStudents.filter(
-    (student) => !students.some((s) => s.id === student.id)
-  );
-
-  // Khi bấm "Sửa" cho một học sinh, mở modal và điền sẵn thông tin học sinh đó
   const handleEditClick = (student) => {
     setStudentToEdit(student);
     setEditFormData({
-      ho_ten: student.ho_ten || "",
-      ma_sinh_vien: student.ma_sinh_vien || "",
-      ngay_sinh: student.ngay_sinh || "",
-      dia_chi: student.dia_chi || "",
-      password: "", // Để trống nếu không muốn hiển thị mật khẩu hiện tại
+      ho_ten: student.ho_ten,
+      ma_sinh_vien: student.ma_sinh_vien,
+      ngay_sinh: student.ngay_sinh,
+      dia_chi: student.dia_chi,
+      password: "",
     });
     setShowEditModal(true);
   };
 
-  // Xử lý thay đổi dữ liệu trong form chỉnh sửa
-  const handleEditFormChange = (e) => {
-    setEditFormData({
-      ...editFormData,
-      [e.target.name]: e.target.value,
-    });
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setEditFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Khi lưu chỉnh sửa
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (!studentToEdit) return;
-    api
-      .put(`/students/${studentToEdit.id}`, editFormData)
-      .then((res) => {
-        alert("Cập nhật học sinh thành công!");
-        setShowEditModal(false);
-        fetchClassData(); // Cập nhật lại danh sách sau khi chỉnh sửa
-      })
-      .catch((err) => {
-        console.error(err);
-        alert(err.response?.data?.error || "Lỗi cập nhật học sinh");
-      });
+    try {
+      await api.put(`/students/${studentToEdit.id}`, editFormData);
+      messageApi.success("Cập nhật học sinh thành công");
+      setShowEditModal(false);
+      fetchData();
+    } catch {
+      messageApi.error("Lỗi cập nhật học sinh");
+    }
   };
 
-  const handleImportSuccess = () => {
-    fetchClassData();
-    fetchAllStudents();
-  };
-  
+  const availableStudents = allStudents.filter((stu) => !students.some((s) => s.id === stu.id));
 
-  // Đăng xuất
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("role");
-    navigate("/login");
-  };
+  const columns = [
+    { title: "Họ tên", dataIndex: "ho_ten", key: "ho_ten" },
+    { title: "Mã SV", dataIndex: "ma_sinh_vien", key: "ma_sinh_vien" },
+    { title: "Username", dataIndex: ["User", "username"], key: "username" },
+    {
+      title: "Trạng thái",
+      key: "status",
+      render: (_, record) => (
+        <Select
+          value={attendanceData[record.id]}
+          onChange={(val) => handleStatusChange(record.id, val)}
+          size="small"
+        >
+          <Option value="present">Có mặt</Option>
+          <Option value="late">Muộn</Option>
+          <Option value="absent">Vắng</Option>
+        </Select>
+      ),
+    },
+    {
+      title: "Hành động",
+      key: "actions",
+      render: (_, record) => (
+        <span className="flex space-x-2">
+          <Button
+            icon={<EditOutlined />}
+            size="small"
+            onClick={() => handleEditClick(record)}
+          />
+          <Popconfirm
+            title="Xóa học sinh khỏi lớp?"
+            onConfirm={() => handleRemoveStudent(record.id)}
+          >
+            <Button icon={<DeleteOutlined />} danger size="small" />
+          </Popconfirm>
+        </span>
+      ),
+    },
+  ];
 
   return (
-    <div className="container mt-4">
-      <HustHeader
-        title={`Chi tiết lớp: ${classDetail ? classDetail.className : ""}`}
-        subtitle={`Môn: ${classDetail ? classDetail.subject : ""} | GV: ${
-          classDetail ? classDetail.teacher : ""
-        }`}
-        icon="clipboard-check"
-      />
+    <Layout className="min-h-screen">
+      {contextHolder}
+      <Content className="container mx-auto py-6">
+        <HustHeader
+          title={`Chi tiết lớp: ${classDetail?.className || ""}`}
+          subtitle={`Môn: ${classDetail?.subject || ""} | GV: ${classDetail?.teacher || ""}`}
+          icon={<CalendarOutlined />}
+        />
 
-      <div className="card mb-4">
-        <div className="card-body">
-          <h5>
-            <i className="bi bi-calendar-check me-1"></i>Điểm danh
-          </h5>
-          <div className="row mb-3">
-            <div className="col-md-4">
-              <label className="form-label">Chọn ngày điểm danh</label>
-              <input
-                type="date"
-                className="form-control"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
+        <Card className="mb-6">
+          <Form layout="inline">
+            <Form.Item label="Chọn ngày">
+              <DatePicker onChange={(date) => setAttendanceDate(date)} />
+            </Form.Item>
+            <Form.Item>
+              <Button type="primary" onClick={handleSaveAttendance}>
+                Lưu điểm danh
+              </Button>
+            </Form.Item>
+            <Form.Item>
+              <ExportAttendance classId={id} date={attendanceDate?.format("YYYY-MM-DD")} />
+            </Form.Item>
+          </Form>
+        </Card>
+
+        <Card title="Danh sách học sinh" className="mb-6">
+          <Table n dataSource={students} columns={columns} rowKey="id" pagination={false} />
+        </Card>
+
+        <Card className="mb-6">
+          <Form layout="inline">
+            <Form.Item label="Thêm học sinh">
+              <Select
+                placeholder="Chọn học sinh"
+                style={{ minWidth: 200 }}
+                value={selectedStudentId}
+                onChange={setSelectedStudentId}
+                options={availableStudents.map((stu) => ({
+                  value: stu.id,
+                  label: `${stu.ho_ten} (${stu.ma_sinh_vien})`,
+                }))}
               />
-            </div>
-          </div>
-        </div>
-      </div>
+            </Form.Item>
+            <Form.Item>
+              <Button
+                type="dashed"
+                icon={<UploadOutlined />}
+                onClick={handleAddStudent}
+              >
+                Thêm học sinh
+              </Button>
+            </Form.Item>
+            <Form.Item>
+              <ImportStudents classId={id} onImportSuccess={fetchData} />
+            </Form.Item>
+          </Form>
+        </Card>
 
-      {/* Import học sinh */}
-      <div className="card mb-4">
-        <div className="card-body">
-          <ImportStudents
-            classId={id}
-            onImportSuccess={() => {
-              fetchClassData();
-              fetchAllStudents();
-            }}
-          />
-        </div>
-      </div>
-
-      {/* Bảng danh sách học sinh của lớp */}
-      <div className="card mb-4">
-        <div className="card-body">
-          <h5>
-            <i className="bi bi-people me-1"></i>Danh sách học sinh
-          </h5>
-
-          <table className="table table-bordered">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Họ tên</th>
-                <th>Mã SV</th>
-                <th>Username</th>
-                <th>Trạng thái</th>
-                <th>Hành động</th>
-              </tr>
-            </thead>
-            <tbody>
-              {students.map((student) => (
-                <tr key={student.id}>
-                  <td>{student.id}</td>
-                  <td>{student.ho_ten}</td>
-                  <td>{student.ma_sinh_vien}</td>
-                  <td>{student.User ? student.User.username : ""}</td>
-                  <td>
-                    <select
-                      className="form-select"
-                      value={attendanceData[student.id] || "present"}
-                      onChange={(e) =>
-                        setAttendanceData((prev) => ({
-                          ...prev,
-                          [student.id]: e.target.value,
-                        }))
-                      }
-                    >
-                      <option value="present">Có mặt</option>
-                      <option value="absent">Vắng</option>
-                      <option value="late">Muộn</option>
-                    </select>
-                  </td>
-                  <td>
-                    <button
-                      className="btn btn-sm btn-primary me-2"
-                      onClick={() => handleEditClick(student)}
-                    >
-                      <i className="bi bi-pencil-square"></i> Sửa
-                    </button>
-                    <button
-                      className="btn btn-sm btn-danger"
-                      onClick={() => handleRemoveStudent(student.id)}
-                    >
-                      <i className="bi bi-person-dash"></i> Xoá
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          <button
-            className="btn btn-primary mt-3 me-2"
-            onClick={handleSaveAttendance}
-          >
-            <i className="bi bi-check-circle me-1"></i>Lưu điểm danh
-          </button>
-          <button
-            className="btn btn-outline-primary mt-3"
-            onClick={() => navigate(`/teacher/report/${id}`)}
-          >
-            <i className="bi bi-bar-chart me-1"></i>Xem báo cáo
-          </button>
-
-          <div className="d-flex justify-content-end mb-3">
-            {/* Giả sử có state "date" chứa ngày điểm danh và "classDetail" chứa thông tin lớp */}
-            <ExportAttendance
-              classId={classDetail && classDetail.classId}
-              date={date}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Modal chỉnh sửa thông tin học sinh */}
-      {showEditModal && (
-        <div className="modal show d-block" tabIndex="-1">
-          <div className="modal-dialog">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Chỉnh sửa thông tin học sinh</h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={() => setShowEditModal(false)}
-                ></button>
-              </div>
-              <div className="modal-body">
-                <div className="mb-2">
-                  <label className="form-label">Họ tên</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    name="ho_ten"
-                    value={editFormData.ho_ten}
-                    onChange={handleEditFormChange}
-                  />
-                </div>
-                <div className="mb-2">
-                  <label className="form-label">Mã sinh viên</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    name="ma_sinh_vien"
-                    value={editFormData.ma_sinh_vien}
-                    onChange={handleEditFormChange}
-                  />
-                </div>
-                <div className="mb-2">
-                  <label className="form-label">Ngày sinh</label>
-                  <input
-                    type="date"
-                    className="form-control"
-                    name="ngay_sinh"
-                    value={editFormData.ngay_sinh}
-                    onChange={handleEditFormChange}
-                  />
-                </div>
-                <div className="mb-2">
-                  <label className="form-label">Địa chỉ</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    name="dia_chi"
-                    value={editFormData.dia_chi}
-                    onChange={handleEditFormChange}
-                  />
-                </div>
-                <div className="mb-2">
-                  <label className="form-label">Mật khẩu</label>
-                  <input
-                    type="password"
-                    className="form-control"
-                    name="password"
-                    placeholder="Để trống nếu không thay đổi"
-                    value={editFormData.password}
-                    onChange={handleEditFormChange}
-                  />
-                </div>
-              </div>
-              <div className="modal-footer">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => setShowEditModal(false)}
-                >
-                  Hủy
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={handleSaveEdit}
-                >
-                  Lưu thay đổi
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Phần thêm học sinh bằng cách chọn từ danh sách */}
-      <div className="card mb-4">
-        <div className="card-body">
-          <h5>
-            <i className="bi bi-person-plus me-1"></i>Thêm học sinh vào lớp
-          </h5>
-          <p className="text-muted mb-2">
-            Chọn học sinh từ danh sách sau để thêm vào lớp.
-          </p>
-
-          <div className="mb-3">
-            <label className="form-label">Chọn học sinh</label>
-            <select
-              className="form-select"
-              value={selectedStudentId}
-              onChange={(e) => setSelectedStudentId(e.target.value)}
-            >
-              <option value="">--Chọn học sinh để thêm--</option>
-              {availableStudents.map((student) => (
-                <option key={student.id} value={student.id}>
-                  {student.ho_ten} - {student.ma_sinh_vien}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <button className="btn btn-success" onClick={handleAddStudent}>
-            <i className="bi bi-person-plus-fill me-1"></i>Thêm học sinh
-          </button>
-        </div>
-      </div>
-
-      <hr />
+        <Modal
+          title="Chỉnh sửa học sinh"
+          open={showEditModal}
+          onOk={handleSaveEdit}
+          onCancel={() => setShowEditModal(false)}
+          okText="Lưu"
+          cancelText="Hủy"
+        >
+          <Form layout="vertical">
+            <Form.Item label="Họ tên">
+              <Input
+                name="ho_ten"
+                value={editFormData.ho_ten}
+                onChange={handleEditChange}
+              />
+            </Form.Item>
+            <Form.Item label="Mã SV">
+              <Input
+                name="ma_sinh_vien"
+                value={editFormData.ma_sinh_vien}
+                onChange={handleEditChange}
+              />
+            </Form.Item>
+            <Form.Item label="Ngày sinh">
+              <DatePicker
+                value={editFormData.ngay_sinh ? dayjs(editFormData.ngay_sinh) : null}
+                onChange={(d) => setEditFormData((prev) => ({
+                  ...prev,
+                  ngay_sinh: d ? d.format("YYYY-MM-DD") : "",
+                }))}
+              />
+            </Form.Item>
+            <Form.Item label="Địa chỉ">
+              <Input
+                name="dia_chi"
+                value={editFormData.dia_chi}
+                onChange={handleEditChange}
+              />
+            </Form.Item>
+            <Form.Item label="Mật khẩu">
+              <Input.Password
+                name="password"
+                placeholder="Để trống nếu không thay đổi"
+                value={editFormData.password}
+                onChange={handleEditChange}
+              />
+            </Form.Item>
+          </Form>
+        </Modal>
+      </Content>
       <HustFooter />
-    </div>
+    </Layout>
   );
 }
-
-export default TeacherClassDetailPage;

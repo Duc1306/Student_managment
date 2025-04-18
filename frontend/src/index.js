@@ -1,23 +1,28 @@
+// src/index.js
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { ConfigProvider } from "antd";
+import viVN from "antd/locale/vi_VN";
 
-import 'bootstrap/dist/css/bootstrap.min.css';
-import 'bootstrap-icons/font/bootstrap-icons.css';
-import "./theme.css";
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import './index.css';
-import App from './App';
-import reportWebVitals from './reportWebVitals';
-<link rel="icon" href="%PUBLIC_URL%/favicon.ico" />;
+import "antd/dist/reset.css"; // Reset AntD
+import "./theme.css"; // Theme overrides
+import "./index.css"; // Tailwind
 
+import App from "./App";
+import reportWebVitals from "./reportWebVitals";
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
+const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
-
-    <App />
-
+     <ConfigProvider
+      locale={viVN}
+      theme={{
+        token: { colorPrimary: "#AF1E2D" }, // màu HUST ‑ đồng bộ với Tailwind
+      }}
+    >
+ 
+      <App />
+    </ConfigProvider>
+ 
 );
 
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
 reportWebVitals();

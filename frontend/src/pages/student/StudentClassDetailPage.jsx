@@ -1,7 +1,11 @@
+// src/pages/student/StudentClassDetailPage.jsx
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import api from "../../api";
+import { Card, List, Table, Tag, Typography, Row, Col } from "antd";
 import { Bar } from "react-chartjs-2";
+import HustHeader from "../../components/layout/HustHeader";
+import HustFooter from "../../components/layout/HustFooter";
+import api from "../../api";
 import {
   Chart as ChartJS,
   BarElement,
@@ -10,14 +14,14 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-import HustHeader from "../../components/layout/HustHeader";
-import HustFooter from "../../components/layout/HustFooter";
+import { CalendarOutlined } from "@ant-design/icons";
 
-// Đăng ký các thành phần cần thiết của ChartJS
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
-function StudentClassDetailPage() {
-  const { id } = useParams(); // ID của lớp
+const { Title } = Typography;
+
+export function StudentClassDetailPage() {
+  const { id } = useParams();
   const [classDetail, setClassDetail] = useState(null);
   const [attendanceRecords, setAttendanceRecords] = useState([]);
   const [attendanceSummary, setAttendanceSummary] = useState({
@@ -26,42 +30,53 @@ function StudentClassDetailPage() {
     absent: 0,
   });
 
-  // Lấy thông tin chi tiết lớp (bao gồm: tên lớp, môn, GV, danh sách học sinh)
-  const fetchClassDetail = async () => {
-    try {
-      const res = await api.get(`/classes/${id}/students`);
-      setClassDetail(res.data);
-    } catch (err) {
-      console.error(err);
-      alert(err.response?.data?.error || "Lỗi tải thông tin lớp");
-    }
-  };
-
-  // Lấy điểm danh của học sinh cho lớp đó
-  const fetchAttendanceRecords = async () => {
-    try {
-      // Với role student, endpoint GET /attendance sẽ tự động lọc theo student_id, chỉ lấy điểm danh của học sinh đó
-      const res = await api.get("/attendance", { params: { classId: id } });
-      setAttendanceRecords(res.data);
-
-      // Tổng hợp số lượng theo trạng thái
-      const summary = { present: 0, late: 0, absent: 0 };
-      res.data.forEach((record) => {
-        summary[record.status] = (summary[record.status] || 0) + 1;
-      });
-      setAttendanceSummary(summary);
-    } catch (err) {
-      console.error(err);
-      alert("Lỗi tải thông tin điểm danh");
-    }
-  };
-
   useEffect(() => {
-    fetchClassDetail();
-    fetchAttendanceRecords();
+    const fetchDetail = async () => {
+      try {
+        const res = await api.get(`/classes/${id}/students`);
+        setClassDetail(res.data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    const fetchAttendance = async () => {
+      try {
+        const res = await api.get("/attendance", { params: { classId: id } });
+        setAttendanceRecords(res.data);
+        const summary = { present: 0, late: 0, absent: 0 };
+        res.data.forEach((rec) => {
+          summary[rec.status] += 1;
+        });
+        setAttendanceSummary(summary);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchDetail();
+    fetchAttendance();
   }, [id]);
 
-  // Chuẩn bị dữ liệu cho biểu đồ
+  const columns = [
+    { title: "Ngày", dataIndex: "date", key: "date" },
+    {
+      title: "Lớp",
+      dataIndex: ["Class", "ten_lop"],
+      key: "class",
+    },
+    {
+      title: "Trạng thái",
+      dataIndex: "status",
+      key: "status",
+      render: (status) => {
+        const color =
+          status === "present" ? "green" : status === "late" ? "orange" : "red";
+        const text =
+          status === "present" ? "Có mặt" : status === "late" ? "Muộn" : "Vắng";
+        return <Tag color={color}>{text}</Tag>;
+      },
+    },
+  ];
+
   const chartData = {
     labels: ["Có mặt", "Muộn", "Vắng"],
     datasets: [
@@ -72,102 +87,64 @@ function StudentClassDetailPage() {
           attendanceSummary.late,
           attendanceSummary.absent,
         ],
-        backgroundColor: ["green", "orange", "red"],
+        backgroundColor: ["#52c41a", "#faad14", "#f5222d"],
       },
     ],
   };
 
   return (
-    <div className="container my-4">
+    <div className="container mx-auto py-6">
       <HustHeader
-        title={`Lớp: ${classDetail ? classDetail.className : "Đang tải..."}`}
+        title={`Lớp: ${classDetail?.className || "Đang tải..."}`}
         subtitle={
           classDetail
             ? `Môn: ${classDetail.subject} | GV: ${classDetail.teacher}`
             : ""
         }
-        icon="clipboard-data"
+        icon={<CalendarOutlined />}
       />
 
-      {/* Hiển thị danh sách học sinh của lớp */}
-      <div className="card mb-4">
-        <div className="card-body">
-          <h5>Danh sách học sinh</h5>
-          {classDetail &&
-          classDetail.students &&
-          classDetail.students.length > 0 ? (
-            <ul className="list-group">
-              {classDetail.students.map((student) => (
-                <li key={student.id} className="list-group-item">
-                  {student.ho_ten} ({student.ma_sinh_vien})
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p>Không có dữ liệu học sinh.</p>
-          )}
-        </div>
-      </div>
+      <Card title="Danh sách học sinh" className="mb-6">
+        {classDetail?.students?.length ? (
+          <List
+            dataSource={classDetail.students}
+            renderItem={(stu) => (
+              <List.Item>
+                {stu.ho_ten} ({stu.ma_sinh_vien})
+              </List.Item>
+            )}
+          />
+        ) : (
+          <p>Không có dữ liệu học sinh.</p>
+        )}
+      </Card>
 
-      <div className="card mb-4">
-        <div className="card-body">
-          <h5>Danh sách điểm danh cá nhân (chi tiết)</h5>
-          {attendanceRecords && attendanceRecords.length > 0 ? (
-            <table className="table table-bordered">
-              <thead>
-                <tr>
-                  <th>Ngày</th>
-                  <th>Lớp</th>
-                  <th>Trạng thái</th>
-                </tr>
-              </thead>
-              <tbody>
-                {attendanceRecords.map((att, idx) => (
-                  <tr key={idx}>
-                    <td>{att.date}</td>
-                    <td>{att.Class ? att.Class.ten_lop : ""}</td>
-                    <td>
-                      <span
-                        className={`badge ${
-                          att.status === "present"
-                            ? "bg-success"
-                            : att.status === "late"
-                            ? "bg-warning"
-                            : "bg-danger"
-                        }`}
-                      >
-                        {att.status === "present"
-                          ? "Có mặt"
-                          : att.status === "late"
-                          ? "Muộn"
-                          : "Vắng"}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <p>Không có dữ liệu điểm danh chi tiết.</p>
-          )}
-        </div>
-      </div>
+      <Card title="Chi tiết điểm danh" className="mb-6">
+        <Table
+          dataSource={attendanceRecords}
+          columns={columns}
+          rowKey={(rec, idx) => idx}
+          pagination={false}
+        />
+      </Card>
 
-      {/* Hiển thị biểu đồ số lượng điểm danh của học sinh tại lớp đó */}
-      <div className="card mb-4">
-        <div className="card-body">
-          <h5>Thông tin điểm danh của bạn</h5>
-          <p>
-            Có mặt: {attendanceSummary.present} lượt, Muộn:{" "}
-            {attendanceSummary.late} lượt, Vắng: {attendanceSummary.absent} lượt
-          </p>
-          <Bar data={chartData} options={{ responsive: true }} />
-        </div>
-      </div>
+      <Card title="Biểu đồ điểm danh của bạn" className="mb-6">
+        <Row gutter={16} className="mb-4">
+          <Col>
+            <Title level={5}>Có mặt: {attendanceSummary.present}</Title>
+          </Col>
+          <Col>
+            <Title level={5}>Muộn: {attendanceSummary.late}</Title>
+          </Col>
+          <Col>
+            <Title level={5}>Vắng: {attendanceSummary.absent}</Title>
+          </Col>
+        </Row>
+        <Bar data={chartData} options={{ responsive: true }} />
+      </Card>
 
       <HustFooter />
     </div>
   );
 }
-
-export default StudentClassDetailPage;
+export default StudentClassDetailPage

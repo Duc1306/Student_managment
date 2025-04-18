@@ -1,58 +1,92 @@
-
-import React, { useState } from "react";
+// src/pages/auth/LoginPage.jsx
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Card, Form, Input, Button, Typography, message } from "antd";
+import { LoginOutlined, UserOutlined, LockOutlined } from "@ant-design/icons";
 import api from "../../api";
 
-function LoginPage() {
-  const navigate = useNavigate();
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+const { Title } = Typography;
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
+export default function LoginPage() {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [messageApi, contextHolder] = message.useMessage();
+
+  const onFinish = async ({ username, password }) => {
+    setLoading(true);
     try {
-      // Gọi API /auth/login, trả về { token, role }
       const res = await api.post("/auth/login", { username, password });
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("role", res.data.role);
-      alert("Đăng nhập thành công!");
+      messageApi.success("Đăng nhập thành công!");
+
       if (res.data.role === "admin") navigate("/admin");
       else if (res.data.role === "teacher") navigate("/teacher");
-      else if (res.data.role === "student") navigate("/student");
+      else navigate("/student");
     } catch (err) {
-      alert(err.response?.data?.error || "Login thất bại");
+      messageApi.error(err.response?.data?.error || "Đăng nhập thất bại");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="container my-5" style={{ maxWidth: "400px" }}>
-      <div className="card p-4 shadow-sm">
-        <h3 className="mb-3 text-center">Đăng nhập HUST</h3>
-        <form onSubmit={handleLogin}>
-          <div className="mb-3">
-            <label className="form-label">Username</label>
-            <input
-              className="form-control"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+    <>
+    
+    {contextHolder}
+    <div className="flex justify-center items-center min-h-screen bg-hust-red/10 px-4">
+      
+      <Card
+        className="w-full max-w-md shadow-xl"
+        bodyStyle={{ backgroundColor: "var(--hust-red)", padding: "2.5rem" }}
+      >
+        <Title level={3} className="!text-center !mb-6 !text-white">
+          Đăng nhập HUST
+        </Title>
+
+        <Form
+          layout="vertical"
+          onFinish={onFinish}
+          requiredMark={false}
+          autoComplete="off"
+        >
+          <Form.Item
+            label={<span className="text-white">Username</span>}
+            name="username"
+            rules={[{ required: true, message: "Vui lòng nhập username!" }]}
+          >
+            <Input
+              prefix={<UserOutlined />}
+              placeholder="Tên đăng nhập"
+              size="large"
             />
-          </div>
-          <div className="mb-3">
-            <label className="form-label">Password</label>
-            <input
-              type="password"
-              className="form-control"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+          </Form.Item>
+
+          <Form.Item
+            label={<span className="text-white">Password</span>}
+            name="password"
+            rules={[{ required: true, message: "Vui lòng nhập mật khẩu!" }]}
+          >
+            <Input.Password
+              prefix={<LockOutlined />}
+              placeholder="Mật khẩu"
+              size="large"
             />
-          </div>
-          <button className="btn btn-hust w-100">
-            <i className="bi bi-box-arrow-in-left me-1"></i>Đăng nhập
-          </button>
-        </form>
-      </div>
+          </Form.Item>
+
+          <Button
+            type="primary"
+            htmlType="submit"
+            icon={<LoginOutlined />}
+            loading={loading}
+            className="w-full bg-white text-hust-red hover:!bg-gray-100"
+            size="large"
+          >
+            Đăng nhập
+          </Button>
+        </Form>
+      </Card>
     </div>
+    </>
   );
 }
-
-export default LoginPage;

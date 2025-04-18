@@ -1,34 +1,58 @@
-// frontend/src/components/import/ImportStudents.jsx
-import React, { useState } from "react";
+// src/components/import/ImportStudents.jsx
+import React from "react";
+import { Upload, Button, Typography, message } from "antd";
+import { UploadOutlined } from "@ant-design/icons";
 import api from "../../api";
 
-function ImportStudents({ classId, onImportSuccess }) {
-  const [file, setFile] = useState(null);
-  const handleFileChange = (e) => setFile(e.target.files[0]);
-  const handleImport = async () => {
-    if (!file) return alert("Vui lòng chọn file Excel");
-    const formData = new FormData();
-    formData.append("file", file);
-    // Gọi đúng endpoint import vào lớp
-    const res = await api.post(
-      `/classes/${classId}/import`,
-      formData,
-      {
-        headers: { "Content-Type": "multipart/form-data" },
+const { Text } = Typography;
+
+/**
+
+ * @param {string|number} classId - ID lớp để import data
+ * @param {Function} onImportSuccess - Callback sau khi import thành công
+ */
+export default function ImportStudents({ classId, onImportSuccess }) {
+  const [messageApi, contextHolder] = message.useMessage();
+  const uploadProps = {
+    accept: ".xlsx,.xls",
+    showUploadList: false,
+    beforeUpload: (file) => {
+      if (!classId) {
+        messageApi.error("Chưa xác định được lớp để import.");
+        return Upload.LIST_IGNORE;
       }
-    );
-    alert("Import thành công!");
-    onImportSuccess(); // gọi callback
+      const formData = new FormData();
+      formData.append("file", file);
+      api
+        .post(`/classes/${classId}/import`, formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        })
+        .then(() => {
+          messageApi.success("Import sinh viên thành công!");
+          onImportSuccess();
+        })
+        .catch((err) => {
+          console.error(err);
+          messageApi.error(err.response?.data?.error || "Import thất bại");
+        });
+      // Trả về false để ngăn Upload tự gửi request
+      return false;
+    },
   };
+
   return (
-    <div>
-      <h5>Import sinh viên vào lớp</h5>
-      <input type="file" accept=".xlsx,.xls" onChange={handleFileChange} />
-      <button className="btn btn-primary" onClick={handleImport}>
-        Import
-      </button>
+    <>
+    {contextHolder}
+    <div className="mb-4">
+      <Text strong className="block mb-2">
+        Import sinh viên vào lớp
+      </Text>
+      <Upload {...uploadProps}>
+        <Button type="primary" icon={<UploadOutlined />}>
+          Chọn file & Import
+        </Button>
+      </Upload>
     </div>
+    </>
   );
 }
-
-export default ImportStudents;

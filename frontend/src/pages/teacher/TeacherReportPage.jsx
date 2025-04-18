@@ -1,7 +1,13 @@
+// src/pages/teacher/TeacherReportPage.jsx
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import api from "../../api";
+import dayjs from "dayjs";
+import { Layout, Card, DatePicker, Row, Col, Typography, message ,Form} from "antd";
 import { Bar } from "react-chartjs-2";
+import { CalendarOutlined } from "@ant-design/icons";
+import HustHeader from "../../components/layout/HustHeader";
+import HustFooter from "../../components/layout/HustFooter";
+import api from "../../api";
 import {
   Chart as ChartJS,
   BarElement,
@@ -10,25 +16,30 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-import HustHeader from "../../components/layout/HustHeader";
-import HustFooter from "../../components/layout/HustFooter";
 
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
-function TeacherReportPage() {
-  const { id } = useParams(); // ID của lớp
+const { Content } = Layout;
+const { Title, Text } = Typography;
+
+export default function TeacherReportPage() {
+  const { id } = useParams();
   const [reportData, setReportData] = useState(null);
-  const [date, setDate] = useState(""); // chọn ngày (tuỳ chọn)
+  const [date, setDate] = useState(null);
+  const [messageApi, contextHolder] = message.useMessage();
 
   useEffect(() => {
-    // Nếu có chọn ngày, truyền vào query param; ngược lại, lấy dữ liệu tổng hợp của lớp
     const params = { classId: id };
-    if (date) params.date = date;
-
+    if (date) {
+      params.date = date.format("YYYY-MM-DD");
+    }
     api
       .get("/attendance/report", { params })
       .then((res) => setReportData(res.data))
-      .catch((err) => console.error(err));
+      .catch((err) => {
+        console.error(err);
+        messageApi.error("Lỗi tải báo cáo");
+      });
   }, [id, date]);
 
   const chartData = {
@@ -39,41 +50,52 @@ function TeacherReportPage() {
         data: reportData
           ? [reportData.present, reportData.late, reportData.absent]
           : [],
-        backgroundColor: ["green", "orange", "red"],
+        backgroundColor: ["#52c41a", "#faad14", "#f5222d"],
       },
     ],
   };
 
   return (
-    <div className="container my-4">
-      <HustHeader
-        title="Báo cáo điểm danh"
-        subtitle={`Lớp ${id} - ${date ? `Ngày ${date}` : "Tổng hợp"}`}
-        icon="clipboard-data"
-      />
-      <div className="mb-3">
-        <label className="form-label">Chọn ngày (tuỳ chọn):</label>
-        <input
-          type="date"
-          className="form-control"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
+    <Layout className="min-h-screen">
+      {contextHolder}
+      <Content className="container mx-auto py-6">
+        <HustHeader
+          title="Báo cáo điểm danh"
+          subtitle={`Lớp ${id} - ${
+            date ? date.format("DD-MM-YYYY") : "Tổng hợp"
+          }`}
+          icon={<CalendarOutlined />}
         />
-      </div>
 
-      
-      {reportData ? (
-        <div className="card mb-4">
-          <div className="card-body">
+        <Card className="mb-6">
+          <Form layout="inline">
+            <Form.Item label="Chọn ngày">
+              <DatePicker allowClear onChange={(d) => setDate(d)} />
+            </Form.Item>
+          </Form>
+        </Card>
+
+        {reportData ? (
+          <Card>
+            <Row gutter={[16, 16]} className="mb-6">
+              <Col>
+                <Title level={5}>Có mặt: {reportData.present}</Title>
+              </Col>
+              <Col>
+                <Title level={5}>Muộn: {reportData.late}</Title>
+              </Col>
+              <Col>
+                <Title level={5}>Vắng: {reportData.absent}</Title>
+              </Col>
+            </Row>
             <Bar data={chartData} options={{ responsive: true }} />
-          </div>
-        </div>
-      ) : (
-        <p>Đang tải dữ liệu báo cáo...</p>
-      )}
-      <HustFooter />
-    </div>
+          </Card>
+        ) : (
+          <Text>Đang tải dữ liệu báo cáo...</Text>
+        )}
+
+        <HustFooter />
+      </Content>
+    </Layout>
   );
 }
-
-export default TeacherReportPage;

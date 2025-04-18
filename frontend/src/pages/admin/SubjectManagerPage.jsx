@@ -1,25 +1,41 @@
-
-import React, { useState, useEffect } from "react";
-import api from "../../api";
+// src/pages/admin/SubjectManagerPage.jsx
+import { useState, useEffect } from "react";
+import {
+  Card,
+  Row,
+  Col,
+  Form,
+  Input,
+  Button,
+  Table,
+  Modal,
+  Popconfirm,
+  Pagination as AntPagination,
+  message,
+} from "antd";
+import {
+  BookOutlined,
+  PlusCircleOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  SearchOutlined,
+} from "@ant-design/icons";
 import HustHeader from "../../components/layout/HustHeader";
 import HustFooter from "../../components/layout/HustFooter";
-
-import Pagination from "../../components/pagination/Pagination";
+import api from "../../api";
 
 function SubjectManagerPage() {
   const [subjects, setSubjects] = useState([]);
-  const [form, setForm] = useState({ ten_mon: "", ma_mon: "" });
+  const [form] = Form.useForm();
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [searchKeyword, setSearchKeyword] = useState("");
 
-  // State cho modal chỉnh sửa môn học
   const [showEditModal, setShowEditModal] = useState(false);
   const [subjectToEdit, setSubjectToEdit] = useState(null);
-  const [editSubjectData, setEditSubjectData] = useState({
-    ten_mon: "",
-    ma_mon: "",
-  });
+  const [editForm] = Form.useForm();
+  const [messageApi, contextHolder] = message.useMessage();
+  
 
   const fetchSubjects = async () => {
     try {
@@ -30,7 +46,7 @@ function SubjectManagerPage() {
       setTotalPages(res.data.meta.totalPages);
     } catch (err) {
       console.error(err);
-      alert("Lỗi tải môn học");
+      messageApi.error("Lỗi tải môn học");
     }
   };
 
@@ -38,223 +54,183 @@ function SubjectManagerPage() {
     fetchSubjects();
   }, [currentPage, searchKeyword]);
 
-  const handleCreate = async () => {
+  const handleCreate = async (values) => {
     try {
-      await api.post("/subjects", form);
-      alert("Tạo môn thành công!");
-      setForm({ ten_mon: "", ma_mon: "" });
+      await api.post("/subjects", values);
+      messageApi.success("Tạo môn thành công!");
+      form.resetFields();
       setCurrentPage(1);
       fetchSubjects();
     } catch (err) {
       console.error(err);
-      alert("Lỗi tạo môn");
+      messageApi.error("Lỗi tạo môn");
     }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Xoá môn này?")) return;
     try {
       await api.delete(`/subjects/${id}`);
+      messageApi.success("Xoá môn thành công");
       fetchSubjects();
     } catch (err) {
       console.error(err);
-      alert("Xoá thất bại");
+      messageApi.error("Xoá thất bại");
     }
   };
 
-  // --- Phần chỉnh sửa môn học ---
-  const handleEditClick = (subject) => {
-    setSubjectToEdit(subject);
-    setEditSubjectData({
-      ten_mon: subject.ten_mon,
-      ma_mon: subject.ma_mon,
-    });
+  const handleEditClick = (record) => {
+    setSubjectToEdit(record);
+    editForm.setFieldsValue({ ten_mon: record.ten_mon, ma_mon: record.ma_mon });
     setShowEditModal(true);
-  };
-
-  const handleEditChange = (e) => {
-    setEditSubjectData({ ...editSubjectData, [e.target.name]: e.target.value });
   };
 
   const handleSaveEdit = async () => {
     try {
-      await api.put(`/subjects/${subjectToEdit.id}`, editSubjectData);
-      alert("Cập nhật môn học thành công!");
+      const values = await editForm.validateFields();
+      await api.put(`/subjects/${subjectToEdit.id}`, values);
+      messageApi.success("Cập nhật môn học thành công!");
       setShowEditModal(false);
       fetchSubjects();
-    } catch (error) {
-      console.error(error);
-      alert("Lỗi cập nhật môn học");
+    } catch (err) {
+      console.error(err);
+      messageApi.error("Lỗi cập nhật môn học");
     }
   };
 
-  const handleSearch = (e) => {
-    e.preventDefault();
+  const handleSearch = (values) => {
     setCurrentPage(1);
-    fetchSubjects();
+    setSearchKeyword(values.keyword || "");
   };
 
-  const handlePageChange = (newPage) => {
-    setCurrentPage(newPage);
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
   };
+
+  const columns = [
+    { title: "ID", dataIndex: "id", width: 60 },
+    { title: "Tên môn", dataIndex: "ten_mon" },
+    { title: "Mã môn", dataIndex: "ma_mon" },
+    {
+      title: "Hành động",
+      dataIndex: "actions",
+      render: (_, record) => (
+        <>
+          <Button
+            icon={<EditOutlined />}
+            size="small"
+            onClick={() => handleEditClick(record)}
+          />
+          <Popconfirm
+            title="Xoá môn này?"
+            onConfirm={() => handleDelete(record.id)}
+          >
+            <Button
+              icon={<DeleteOutlined />}
+              danger
+              size="small"
+              className="ml-2"
+            />
+          </Popconfirm>
+        </>
+      ),
+    },
+  ];
 
   return (
-    <div className="container my-4">
+    <div className="container mx-auto py-6">
+      {contextHolder}
       <HustHeader
         title="Quản lý Môn học"
         subtitle="Thêm, chỉnh sửa hoặc xoá môn học"
-        icon="journal-bookmark-fill"
+        icon={<BookOutlined />}
       />
 
-      <div className="card shadow-sm mb-4">
-        <div className="card-body">
-          <h5>
-            <i className="bi bi-plus-lg me-1"></i>Tạo Môn
-          </h5>
-          <div className="row mb-3">
-            <div className="col-md-6">
-              <label className="form-label">Tên môn</label>
-              <input
-                className="form-control"
-                value={form.ten_mon}
-                onChange={(e) => setForm({ ...form, ten_mon: e.target.value })}
-              />
-            </div>
-            <div className="col-md-6">
-              <label className="form-label">Mã môn</label>
-              <input
-                className="form-control"
-                value={form.ma_mon}
-                onChange={(e) => setForm({ ...form, ma_mon: e.target.value })}
-              />
-            </div>
-          </div>
-          <button className="btn btn-hust" onClick={handleCreate}>
-            <i className="bi bi-plus-circle me-1"></i>Thêm
-          </button>
-        </div>
-      </div>
+      <Card className="mb-6">
+        <Form form={form} layout="vertical" onFinish={handleCreate}>
+          <Row gutter={16}>
+            <Col xs={24} md={12}>
+              <Form.Item
+                label="Tên môn"
+                name="ten_mon"
+                rules={[{ required: true, message: "Nhập tên môn" }]}
+              >
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item
+                label="Mã môn"
+                name="ma_mon"
+                rules={[{ required: true, message: "Nhập mã môn" }]}
+              >
+                <Input />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Button
+            type="primary"
+            icon={<PlusCircleOutlined />}
+            htmlType="submit"
+          >
+            Thêm môn
+          </Button>
+        </Form>
+      </Card>
 
-      <form onSubmit={handleSearch} className="mb-3">
-        <div className="row">
-          <div className="col-md-4">
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Tìm kiếm theo tên môn..."
-              value={searchKeyword}
-              onChange={(e) => setSearchKeyword(e.target.value)}
-            />
-          </div>
-          <div className="col-md-2">
-            <button type="submit" className="btn btn-hust">
-              Tìm kiếm
-            </button>
-          </div>
-        </div>
-      </form>
+      <Form layout="inline" onFinish={handleSearch} className="mb-4">
+        <Form.Item name="keyword">
+          <Input
+            prefix={<SearchOutlined />}
+            placeholder="Tìm kiếm theo tên môn..."
+          />
+        </Form.Item>
+        <Button type="primary" htmlType="submit">
+          Tìm kiếm
+        </Button>
+      </Form>
 
-      <div className="card shadow-sm">
-        <div className="card-body">
-          <h5>
-            <i className="bi bi-table me-1"></i>Danh sách Môn học
-          </h5>
-          <table className="table table-bordered table-hover">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Tên môn</th>
-                <th>Mã môn</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {subjects.map((s) => (
-                <tr key={s.id}>
-                  <td>{s.id}</td>
-                  <td>{s.ten_mon}</td>
-                  <td>{s.ma_mon}</td>
-                  <td>
-                    <button
-                      className="btn btn-sm btn-primary me-2"
-                      onClick={() => handleEditClick(s)}
-                    >
-                      <i className="bi bi-pencil-square"></i> Sửa
-                    </button>
-                    <button
-                      className="btn btn-danger btn-sm"
-                      onClick={() => handleDelete(s.id)}
-                    >
-                      <i className="bi bi-trash"></i> Xoá
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
+      <Card>
+        <Table
+          rowKey="id"
+          dataSource={subjects}
+          columns={columns}
+          pagination={false}
+        />
+        <div className="flex justify-center items-center mt-4">
+          <AntPagination
+            current={currentPage}
+            total={totalPages * 6}
+            pageSize={6}
+            onChange={handlePageChange}
           />
         </div>
-      </div>
+      </Card>
 
-      {/* Modal chỉnh sửa môn học */}
-      {showEditModal && (
-        <div className="modal show d-block" tabIndex="-1">
-          <div className="modal-dialog">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Chỉnh sửa Môn học</h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={() => setShowEditModal(false)}
-                ></button>
-              </div>
-              <div className="modal-body">
-                <div className="mb-3">
-                  <label className="form-label">Tên môn</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    name="ten_mon"
-                    value={editSubjectData.ten_mon}
-                    onChange={handleEditChange}
-                  />
-                </div>
-                <div className="mb-3">
-                  <label className="form-label">Mã môn</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    name="ma_mon"
-                    value={editSubjectData.ma_mon}
-                    onChange={handleEditChange}
-                  />
-                </div>
-              </div>
-              <div className="modal-footer">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => setShowEditModal(false)}
-                >
-                  Hủy
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={handleSaveEdit}
-                >
-                  Lưu thay đổi
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <Modal
+        title="Chỉnh sửa Môn học"
+        open={showEditModal}
+        onCancel={() => setShowEditModal(false)}
+        onOk={handleSaveEdit}
+        okText="Lưu"
+        cancelText="Hủy"
+      >
+        <Form form={editForm} layout="vertical">
+          <Form.Item
+            label="Tên môn"
+            name="ten_mon"
+            rules={[{ required: true, message: "Nhập tên môn" }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            label="Mã môn"
+            name="ma_mon"
+            rules={[{ required: true, message: "Nhập mã môn" }]}
+          >
+            <Input />
+          </Form.Item>
+        </Form>
+      </Modal>
 
       <HustFooter />
     </div>

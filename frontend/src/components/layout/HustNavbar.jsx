@@ -1,10 +1,23 @@
-
+// src/components/layout/HustNavbar.jsx
 import React from "react";
+import { Layout, Menu, Button, Switch as AntSwitch, theme } from "antd";
+import {
+  DashboardOutlined,
+  UserOutlined,
+  BookOutlined,
+  LoginOutlined,
+  LogoutOutlined,
+  BulbOutlined,
+  MoonOutlined,
+} from "@ant-design/icons";
 import { Link, useNavigate } from "react-router-dom";
 
-function HustNavbar({ darkMode, setDarkMode }) {
+const { Header } = Layout;
+
+export default function HustNavbar({ darkMode, setDarkMode }) {
   const role = localStorage.getItem("role");
   const navigate = useNavigate();
+  const { token } = theme.useToken();
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -12,116 +25,91 @@ function HustNavbar({ darkMode, setDarkMode }) {
     navigate("/login");
   };
 
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-  };
+  const navItems = [
+    role === "admin" && {
+      key: "admin",
+      icon: <DashboardOutlined />,
+      label: <Link to="/admin">Admin Dashboard</Link>,
+    },
+    role === "teacher" && {
+      key: "teacher",
+      icon: <UserOutlined />,
+      label: <Link to="/teacher">Teacher Dashboard</Link>,
+    },
+    role === "student" && {
+      key: "student",
+      icon: <BookOutlined />,
+      label: <Link to="/student">Student Dashboard</Link>,
+    },
+  ].filter(Boolean);
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-hust navbar-dark">
-      <div className="container-fluid">
-        <Link className="navbar-brand d-flex align-items-center" to="/login">
+    <Header
+      className="flex items-center justify-between px-4"
+      style={{ backgroundColor: "var(--hust-red)", padding: 0 }}
+    >
+      {/* Brand */}
+      <div className="flex items-center gap-2 px-4">
+        <Link to="/" className="flex items-center gap-2 text-white">
           <img
             src="/hust.jpg"
             alt="HUST"
-            height="40"
-            className="me-2"
-            style={{ objectFit: "contain" }}
+            className="h-10 w-auto object-contain"
           />
-          <span>Đại học Bách Khoa Hà Nội</span>
+          <span className="font-semibold hidden md:inline">
+            Đại học Bách Khoa Hà Nội
+          </span>
         </Link>
-
-        <button
-          className="navbar-toggler"
-          type="button"
-          data-bs-toggle="collapse"
-          data-bs-target="#navbarHust"
-          aria-controls="navbarHust"
-          aria-expanded="false"
-          aria-label="Toggle navigation"
-        >
-          <span className="navbar-toggler-icon"></span>
-        </button>
-
-        <div className="collapse navbar-collapse" id="navbarHust">
-          <ul className="navbar-nav ms-auto">
-            {/* Nếu là admin */}
-            {role === "admin" && (
-              <li className="nav-item">
-                <Link className="nav-link" to="/admin">
-                  <i className="bi bi-speedometer2 me-1"></i>Admin Dashboard
-                </Link>
-              </li>
-            )}
-
-            {/* Nếu là teacher */}
-            {role === "teacher" && (
-              <li className="nav-item">
-                <Link className="nav-link" to="/teacher">
-                  <i className="bi bi-person-workspace me-1"></i>Teacher
-                  Dashboard
-                </Link>
-              </li>
-            )}
-
-            {/* Nếu là student */}
-            {role === "student" && (
-              <li className="nav-item">
-                <Link className="nav-link" to="/student">
-                  <i className="bi bi-mortarboard me-1"></i>Student Dashboard
-                </Link>
-              </li>
-            )}
-
-            {/* Nếu chưa đăng nhập */}
-            {!role && (
-              <li className="nav-item">
-                <Link className="btn btn-danger" to="/login">
-                  <i className="bi bi-box-arrow-in-left me-1"></i>Đăng nhập
-                </Link>
-              </li>
-            )}
-
-            {/* Nếu đã đăng nhập */}
-            {role && (
-              <li className="nav-item">
-                <div className="mb-3 text-end">
-                  <button onClick={handleLogout} className="btn btn-danger">
-                    <i className="bi bi-box-arrow-right me-1"></i>Đăng xuất
-                  </button>
-                </div>
-              </li>
-            )}
-
-            <li className="nav-item d-flex align-items-center ms-2">
-              <div className="form-check form-switch text-light">
-                <input
-                  className="form-check-input"
-                  type="checkbox"
-                  id="darkModeSwitch"
-                  checked={darkMode}
-                  onChange={toggleDarkMode}
-                />
-                <label
-                  className="form-check-label ms-1"
-                  htmlFor="darkModeSwitch"
-                >
-                  {darkMode ? (
-                    <>
-                      <i className="bi bi-moon-stars me-1"></i>Dark
-                    </>
-                  ) : (
-                    <>
-                      <i className="bi bi-brightness-high me-1"></i>Light
-                    </>
-                  )}
-                </label>
-              </div>
-            </li>
-          </ul>
-        </div>
       </div>
-    </nav>
+
+      {/* Menu */}
+      {role && (
+        <Menu
+          theme="dark"
+          mode="horizontal"
+          selectable={false}
+          items={navItems}
+          className="flex-1"
+          style={{ backgroundColor: "transparent" }}
+        />
+      )}
+
+      {/* Actions */}
+      <div className="flex items-center gap-4 px-4">
+        {/* Dark Mode Switch */}
+        <AntSwitch
+          checked={darkMode}
+          onChange={setDarkMode}
+          checkedChildren={<MoonOutlined />}
+          unCheckedChildren={<BulbOutlined />}
+          style={{ backgroundColor: token.colorPrimary }}
+        />
+
+        {/* Login/Logout Button */}
+        {role ? (
+          <Button
+            type="primary"
+            danger
+            icon={<LogoutOutlined />}
+            onClick={handleLogout}
+          >
+            Đăng xuất
+          </Button>
+        ) : (
+          <Link to="/login">
+            <Button
+              type="primary"
+              icon={<LoginOutlined />}
+              style={{
+                backgroundColor: "var(--hust-red)",
+                borderColor: "var(--hust-red)",
+              }}
+            >
+              Đăng nhập
+            </Button>
+          </Link>
+        )}
+      </div>
+    </Header>
   );
 }
-
-export default HustNavbar;

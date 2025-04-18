@@ -1,28 +1,26 @@
-import React, { useState, useEffect } from "react";
-import api from "../../api";
+import { useState, useEffect } from "react";
+import { Row, Col, Card, Statistic, theme } from "antd";
 import { Bar } from "react-chartjs-2";
 import {
-  Chart as ChartJS,
-  BarElement,
-  CategoryScale,
-  LinearScale,
-  Tooltip,
-  Legend,
-} from "chart.js";
+  BookOutlined,
+  TeamOutlined,
+  ApartmentOutlined,
+  CheckCircleOutlined,
+  BarChartOutlined,
+} from "@ant-design/icons";
+import api from "../../api";
 import HustHeader from "../../components/layout/HustHeader";
 import HustFooter from "../../components/layout/HustFooter";
 
-// Đăng ký các thành phần của Chart.js
-ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
-
 function AdminReportPage() {
   const [overviewData, setOverviewData] = useState(null);
+  const { token } = theme.useToken();
 
   useEffect(() => {
     api
       .get("/reports/overview")
       .then((res) => setOverviewData(res.data))
-      .catch((err) => console.error(err));
+      .catch(console.error);
   }, []);
 
   const chartData = {
@@ -37,67 +35,76 @@ function AdminReportPage() {
               overviewData.attendanceSummary.absent,
             ]
           : [],
-        backgroundColor: ["green", "orange", "red"],
+        backgroundColor: [
+          token.colorSuccess,
+          token.colorWarning,
+          token.colorError,
+        ],
       },
     ],
   };
 
   return (
-    <div className="container my-4">
+    <div className="container mx-auto py-6">
       <HustHeader
         title="Báo cáo tổng quan"
         subtitle="Thống kê tổng hợp hệ thống"
-        icon="bar-chart"
+        icon={<BarChartOutlined />}
       />
+
       {overviewData ? (
         <>
-          <div className="row mb-4">
-            <div className="col-md-3">
-              <div className="card text-center">
-                <div className="card-body">
-                  <h5 className="card-title">Số lớp</h5>
-                  <p className="card-text">{overviewData.totalClasses}</p>
-                </div>
-              </div>
-            </div>
-            <div className="col-md-3">
-              <div className="card text-center">
-                <div className="card-body">
-                  <h5 className="card-title">Số giáo viên</h5>
-                  <p className="card-text">{overviewData.totalTeachers}</p>
-                </div>
-              </div>
-            </div>
-            <div className="col-md-3">
-              <div className="card text-center">
-                <div className="card-body">
-                  <h5 className="card-title">Số sinh viên</h5>
-                  <p className="card-text">{overviewData.totalStudents}</p>
-                </div>
-              </div>
-            </div>
-            <div className="col-md-3">
-              <div className="card text-center">
-                <div className="card-body">
-                  <h5 className="card-title">Tổng điểm danh</h5>
-                  <p className="card-text">
-                    {overviewData.attendanceSummary.present +
-                      overviewData.attendanceSummary.late +
-                      overviewData.attendanceSummary.absent}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="card mb-4">
-            <div className="card-body">
-              <Bar data={chartData} options={{ responsive: true }} />
-            </div>
-          </div>
+          <Row gutter={[16, 16]} className="my-6">
+            <Col xs={12} md={6}>
+              <Card>
+                <Statistic
+                  title="Số lớp"
+                  value={overviewData.totalClasses}
+                  prefix={<ApartmentOutlined />}
+                />
+              </Card>
+            </Col>
+            <Col xs={12} md={6}>
+              <Card>
+                <Statistic
+                  title="Số giáo viên"
+                  value={overviewData.totalTeachers}
+                  prefix={<TeamOutlined />}
+                />
+              </Card>
+            </Col>
+            <Col xs={12} md={6}>
+              <Card>
+                <Statistic
+                  title="Số sinh viên"
+                  value={overviewData.totalStudents}
+                  prefix={<BookOutlined />}
+                />
+              </Card>
+            </Col>
+            <Col xs={12} md={6}>
+              <Card>
+                <Statistic
+                  title="Tổng điểm danh"
+                  value={
+                    overviewData.attendanceSummary.present +
+                    overviewData.attendanceSummary.late +
+                    overviewData.attendanceSummary.absent
+                  }
+                  prefix={<CheckCircleOutlined />}
+                />
+              </Card>
+            </Col>
+          </Row>
+
+          <Card className="shadow">
+            <Bar data={chartData} options={{ responsive: true }} />
+          </Card>
         </>
       ) : (
-        <p>Đang tải dữ liệu...</p>
+        <p className="mt-6">Đang tải dữ liệu...</p>
       )}
+
       <HustFooter />
     </div>
   );

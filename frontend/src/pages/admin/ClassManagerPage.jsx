@@ -1,28 +1,52 @@
-
-import React, { useEffect, useState } from "react";
+// src/pages/admin/ClassManagerPage.jsx
+import { useEffect, useState } from "react";
+import {
+  Card,
+  Row,
+  Col,
+  Form,
+  Input,
+  Select,
+  Button,
+  Table,
+  Modal,
+  Popconfirm,
+  Pagination as AntPagination,
+  message,
+} from "antd";
+import {
+  ApartmentOutlined,
+  PlusCircleOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  SearchOutlined,
+} from "@ant-design/icons";
 import HustHeader from "../../components/layout/HustHeader";
 import HustFooter from "../../components/layout/HustFooter";
-import Pagination from "../../components/pagination/Pagination";
-import ExportClasses from "../../components/export/ExportClasses"; 
-
+import ExportClasses from "../../components/export/ExportClasses";
 import api from "../../api";
 
+const { Option } = Select;
 
-function ClassManagerPage() {
+export default function ClassManagerPage() {
+
   const [classes, setClasses] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [teachers, setTeachers] = useState([]);
+  const [messageApi, contextHolder] = message.useMessage();
+
   const [newClass, setNewClass] = useState({
     ten_lop: "",
     ma_lop: "",
     subject_id: "",
     teacher_id: "",
   });
+
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [searchKeyword, setSearchKeyword] = useState("");
 
-  // State cho modal chỉnh sửa
+  // Edit modal
   const [showEditModal, setShowEditModal] = useState(false);
   const [classToEdit, setClassToEdit] = useState(null);
   const [editClassData, setEditClassData] = useState({
@@ -32,7 +56,7 @@ function ClassManagerPage() {
     teacher_id: "",
   });
 
-  // Load danh sách môn và giáo viên
+  /* ----------------------------- Fetch ----------------------------- */
   const fetchSubjectsAndTeachers = async () => {
     try {
       const [resSubject, resTeacher] = await Promise.all([
@@ -41,71 +65,56 @@ function ClassManagerPage() {
       ]);
       setSubjects(resSubject.data.data);
       setTeachers(resTeacher.data);
-    } catch (error) {
-      console.error(error);
-      alert("Lỗi tải dữ liệu môn hoặc giáo viên");
+    } catch (err) {
+      console.error(err);
+      messageApi.error("Lỗi tải môn hoặc giáo viên");
     }
   };
 
-  // Load danh sách lớp (với phân trang & tìm kiếm)
   const fetchClasses = async () => {
     try {
-      const resClass = await api.get("/classes", {
+      const res = await api.get("/classes", {
         params: { page: currentPage, limit: 6, keyword: searchKeyword },
       });
-      setClasses(resClass.data.data);
-      setTotalPages(resClass.data.meta.totalPages);
-    } catch (error) {
-      console.error(error);
-      alert("Lỗi tải dữ liệu lớp");
+      setClasses(res.data.data);
+      setTotalPages(res.data.meta.totalPages);
+    } catch (err) {
+      console.error(err);
+      messageApi.error("Lỗi tải lớp");
     }
   };
 
-  const fetchData = async () => {
-    await Promise.all([fetchClasses(), fetchSubjectsAndTeachers()]);
-  };
+  const fetchData = () =>
+    Promise.all([fetchClasses(), fetchSubjectsAndTeachers()]);
 
   useEffect(() => {
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, searchKeyword]);
 
-  const handleCreateClass = async () => {
+  /* ---------------------------- Handlers --------------------------- */
+  const handleCreateClass = async (values) => {
     try {
-      if (
-        !newClass.ten_lop ||
-        !newClass.ma_lop ||
-        !newClass.subject_id ||
-        !newClass.teacher_id
-      ) {
-        return alert("Hãy điền đủ thông tin lớp");
-      }
-      await api.post("/classes", newClass);
-      alert("Tạo lớp thành công!");
-      setNewClass({
-        ten_lop: "",
-        ma_lop: "",
-        subject_id: "",
-        teacher_id: "",
-      });
+      await api.post("/classes", values);
+      messageApi.success("Tạo lớp thành công");
+      setNewClass({ ten_lop: "", ma_lop: "", subject_id: "", teacher_id: "" });
       fetchClasses();
-    } catch (error) {
-      console.error(error);
-      alert("Tạo lớp thất bại");
+    } catch (err) {
+      console.error(err);
+      messageApi.error("Tạo lớp thất bại");
     }
   };
 
   const handleDeleteClass = async (classId) => {
-    if (!window.confirm("Xoá lớp này?")) return;
     try {
       await api.delete(`/classes/${classId}`);
       fetchClasses();
-    } catch (error) {
-      console.error(error);
-      alert("Xoá lớp thất bại");
+    } catch (err) {
+      console.error(err);
+      messageApi.error("Xoá lớp thất bại");
     }
   };
 
-  // --- Phần chỉnh sửa lớp ---
   const handleEditClick = (cls) => {
     setClassToEdit(cls);
     setEditClassData({
@@ -117,275 +126,230 @@ function ClassManagerPage() {
     setShowEditModal(true);
   };
 
-  const handleEditChange = (e) => {
-    setEditClassData({ ...editClassData, [e.target.name]: e.target.value });
-  };
-
   const handleSaveEdit = async () => {
     try {
       await api.put(`/classes/${classToEdit.id}`, editClassData);
-      alert("Cập nhật lớp thành công!");
+      messageApi.success("Cập nhật lớp thành công");
       setShowEditModal(false);
       fetchClasses();
-    } catch (error) {
-      console.error(error);
-      alert("Lỗi cập nhật lớp");
+    } catch (err) {
+      console.error(err);
+      messageApi.error("Lỗi cập nhật lớp");
     }
   };
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    setCurrentPage(1);
-    fetchClasses();
-  };
 
-  const handlePageChange = (newPage) => {
-    setCurrentPage(newPage);
-  };
+  const columns = [
+    { title: "ID", dataIndex: "id", width: 60 },
+    { title: "Tên lớp", dataIndex: "ten_lop" },
+    { title: "Mã lớp", dataIndex: "ma_lop" },
+    { title: "Môn", dataIndex: "subject_id" },
+    { title: "Giáo viên", dataIndex: "teacher_id" },
+    {
+      title: "Hành động",
+      dataIndex: "actions",
+      render: (_, record) => (
+        <>
+          <Button
+            icon={<EditOutlined />}
+            size="small"
+            onClick={() => handleEditClick(record)}
+          />
+          <Popconfirm
+            title="Xoá lớp này?"
+            onConfirm={() => handleDeleteClass(record.id)}
+          >
+            <Button
+              icon={<DeleteOutlined />}
+              danger
+              size="small"
+              className="ml-2"
+            />
+          </Popconfirm>
+        </>
+      ),
+    },
+  ];
 
+  
   return (
-    <div className="container my-4">
+    <div className="container mx-auto py-6">
+      {contextHolder}
       <HustHeader
         title="Quản lý Lớp"
         subtitle="Tạo, chỉnh sửa, hoặc xoá lớp học"
-        icon="diagram-3"
+        icon={<ApartmentOutlined />}
       />
 
-      <div className="card mb-4">
-        <div className="card-body">
-          <h5>
-            <i className="bi bi-plus-lg me-1"></i>Tạo Lớp Mới
-          </h5>
-          <div className="row mb-3">
-            <div className="col-md-6">
-              <label className="form-label">Tên lớp</label>
-              <input
-                className="form-control"
-                value={newClass.ten_lop}
-                onChange={(e) =>
-                  setNewClass({ ...newClass, ten_lop: e.target.value })
-                }
-              />
-            </div>
-            <div className="col-md-6">
-              <label className="form-label">Mã lớp</label>
-              <input
-                className="form-control"
-                value={newClass.ma_lop}
-                onChange={(e) =>
-                  setNewClass({ ...newClass, ma_lop: e.target.value })
-                }
-              />
-            </div>
-          </div>
-          <div className="row mb-3">
-            <div className="col-md-6">
-              <label className="form-label">Môn học</label>
-              <select
-                className="form-select"
-                value={newClass.subject_id}
-                onChange={(e) =>
-                  setNewClass({ ...newClass, subject_id: e.target.value })
-                }
+      {/* Form tạo lớp mới */}
+      <Card className="mb-6">
+        <Form
+          layout="vertical"
+          onFinish={handleCreateClass}
+          initialValues={newClass}
+        >
+          <Row gutter={16}>
+            <Col xs={24} md={12}>
+              <Form.Item
+                label="Tên lớp"
+                name="ten_lop"
+                rules={[{ required: true, message: "Nhập tên lớp" }]}
               >
-                <option value="">-- Chọn môn --</option>
-                {subjects.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.ten_mon} ({s.ma_mon})
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="col-md-6">
-              <label className="form-label">Giáo viên</label>
-              <select
-                className="form-select"
-                value={newClass.teacher_id}
-                onChange={(e) =>
-                  setNewClass({ ...newClass, teacher_id: e.target.value })
-                }
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item
+                label="Mã lớp"
+                name="ma_lop"
+                rules={[{ required: true, message: "Nhập mã lớp" }]}
               >
-                <option value="">-- Chọn giáo viên --</option>
-                {teachers.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.ho_ten} ({t.ma_giao_vien})
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <button className="btn btn-hust" onClick={handleCreateClass}>
-            <i className="bi bi-plus-circle me-1"></i>Tạo lớp
-          </button>
-        </div>
-      </div>
+                <Input />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col xs={24} md={12}>
+              <Form.Item
+                label="Môn học"
+                name="subject_id"
+                rules={[{ required: true, message: "Chọn môn" }]}
+              >
+                <Select placeholder="-- Chọn môn --">
+                  {subjects.map((s) => (
+                    <Option key={s.id} value={s.id}>
+                      {s.ten_mon} ({s.ma_mon})
+                    </Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item
+                label="Giáo viên"
+                name="teacher_id"
+                rules={[{ required: true, message: "Chọn GV" }]}
+              >
+                <Select placeholder="-- Chọn giáo viên --">
+                  {teachers.map((t) => (
+                    <Option key={t.id} value={t.id}>
+                      {t.ho_ten} ({t.ma_giao_vien})
+                    </Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+          <Button
+            type="primary"
+            icon={<PlusCircleOutlined />}
+            htmlType="submit"
+            
+          >
+            Tạo lớp
+          </Button>
+        </Form>
+      </Card>
 
-      {/* Tìm kiếm lớp */}
-      <form onSubmit={handleSearch} className="mb-3">
-        <div className="row">
-          <div className="col-md-4">
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Tìm kiếm lớp theo tên..."
-              value={searchKeyword}
-              onChange={(e) => setSearchKeyword(e.target.value)}
-            />
-          </div>
-          <div className="col-md-2">
-            <button type="submit" className="btn btn-hust">
-              Tìm kiếm
-            </button>
-          </div>
-        </div>
-      </form>
-
-      <div className="card">
-        <div className="card-body">
-          <h5>
-            <i className="bi bi-table me-1"></i>Danh sách Lớp
-          </h5>
-          <table className="table table-bordered table-hover">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Tên lớp</th>
-                <th>Mã lớp</th>
-                <th>Môn</th>
-                <th>Giáo viên</th>
-                <th>Hành động</th>
-              </tr>
-            </thead>
-            <tbody>
-              {classes.map((cls) => (
-                <tr key={cls.id}>
-                  <td>{cls.id}</td>
-                  <td>{cls.ten_lop}</td>
-                  <td>{cls.ma_lop}</td>
-                  <td>{cls.subject_id}</td>
-                  <td>{cls.teacher_id}</td>
-                  <td>
-                    <button
-                      className="btn btn-sm btn-primary me-2"
-                      onClick={() => handleEditClick(cls)}
-                    >
-                      <i className="bi bi-pencil-square"></i> Sửa
-                    </button>
-                    <button
-                      className="btn btn-danger btn-sm"
-                      onClick={() => handleDeleteClass(cls.id)}
-                    >
-                      <i className="bi bi-trash"></i> Xoá
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
+      {/* Tìm kiếm */}
+      <Form
+        layout="inline"
+        onFinish={() => {
+          setCurrentPage(1);
+          fetchClasses();
+        }}
+        className="mb-4"
+      >
+        <Form.Item>
+          <Input
+            prefix={<SearchOutlined />}
+            placeholder="Tìm theo tên..."
+            value={searchKeyword}
+            onChange={(e) => setSearchKeyword(e.target.value)}
           />
+        </Form.Item>
+        <Button type="primary" htmlType="submit">
+          Tìm kiếm
+        </Button>
+      </Form>
 
-          <div className="d-flex justify-content-end mb-3">
-            <ExportClasses />
-          </div>
-         
-        </div>
-      </div>
+      {/* Danh sách lớp */}
+      <Card>
+        <Table
+          rowKey="id"
+          dataSource={classes}
+          columns={columns}
+          pagination={false}
+        />
 
-      {/* Modal chỉnh sửa Lớp */}
-      {showEditModal && (
-        <div className="modal show d-block" tabIndex="-1">
-          <div className="modal-dialog">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Chỉnh sửa Lớp</h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={() => setShowEditModal(false)}
-                ></button>
-              </div>
-              <div className="modal-body">
-                <div className="mb-3">
-                  <label className="form-label">Tên lớp</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    name="ten_lop"
-                    value={editClassData.ten_lop}
-                    onChange={handleEditChange}
-                  />
-                </div>
-                <div className="mb-3">
-                  <label className="form-label">Mã lớp</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    name="ma_lop"
-                    value={editClassData.ma_lop}
-                    onChange={handleEditChange}
-                  />
-                </div>
-                <div className="mb-3">
-                  <label className="form-label">Môn học</label>
-                  <select
-                    className="form-select"
-                    name="subject_id"
-                    value={editClassData.subject_id}
-                    onChange={handleEditChange}
-                  >
-                    <option value="">-- Chọn môn --</option>
-                    {subjects.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.ten_mon} ({s.ma_mon})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="mb-3">
-                  <label className="form-label">Giáo viên</label>
-                  <select
-                    className="form-select"
-                    name="teacher_id"
-                    value={editClassData.teacher_id}
-                    onChange={handleEditChange}
-                  >
-                    <option value="">-- Chọn giáo viên --</option>
-                    {teachers.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.ho_ten} ({t.ma_giao_vien})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div className="modal-footer">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => setShowEditModal(false)}
-                >
-                  Hủy
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={handleSaveEdit}
-                >
-                  Lưu thay đổi
-                </button>
-              </div>
-            </div>
-          </div>
+        <div className="flex justify-between items-center mt-4">
+          <AntPagination
+            current={currentPage}
+            total={totalPages * 10}
+            onChange={setCurrentPage}
+          />
+          <ExportClasses />
         </div>
-      )}
+      </Card>
+
+      {/* Modal chỉnh sửa */}
+      <Modal
+        title="Chỉnh sửa Lớp"
+        open={showEditModal}
+        onCancel={() => setShowEditModal(false)}
+        onOk={handleSaveEdit}
+        okText="Lưu"
+        cancelText="Hủy"
+      >
+        <Form layout="vertical">
+          <Form.Item label="Tên lớp">
+            <Input
+              value={editClassData.ten_lop}
+              onChange={(e) =>
+                setEditClassData({ ...editClassData, ten_lop: e.target.value })
+              }
+            />
+          </Form.Item>
+          <Form.Item label="Mã lớp">
+            <Input
+              value={editClassData.ma_lop}
+              onChange={(e) =>
+                setEditClassData({ ...editClassData, ma_lop: e.target.value })
+              }
+            />
+          </Form.Item>
+          <Form.Item label="Môn học">
+            <Select
+              value={editClassData.subject_id}
+              onChange={(value) =>
+                setEditClassData({ ...editClassData, subject_id: value })
+              }
+            >
+              {subjects.map((s) => (
+                <Option key={s.id} value={s.id}>
+                  {s.ten_mon} ({s.ma_mon})
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
+          <Form.Item label="Giáo viên">
+            <Select
+              value={editClassData.teacher_id}
+              onChange={(value) =>
+                setEditClassData({ ...editClassData, teacher_id: value })
+              }
+            >
+              {teachers.map((t) => (
+                <Option key={t.id} value={t.id}>
+                  {t.ho_ten} ({t.ma_giao_vien})
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
+        </Form>
+      </Modal>
 
       <HustFooter />
     </div>
   );
 }
-
-export default ClassManagerPage;

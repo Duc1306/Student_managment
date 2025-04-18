@@ -39,11 +39,3 @@ body.dark-mode {
   background-color: #c11f32; /* màu hover đậm hơn một chút */
   border-color: #c11f32;
 }
-body.light-mode {
-  background-color: #f8f9fa;
-  color: #212529;
-}
-body.dark-mode {
-  background-color: #121212;
-  color: #e0e0e0;
-}

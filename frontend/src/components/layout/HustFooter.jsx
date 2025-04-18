@@ -1,13 +1,15 @@
+import { Layout, Typography } from "antd";
 
-import React from "react";
+const { Footer } = Layout;
+const { Text } = Typography;
 
 function HustFooter() {
   return (
-    <footer className="text-center py-3 mt-4 border-top">
-      <small className="text-muted">
-        © {new Date().getFullYear()} HUST - Bách Khoa 
-      </small>
-    </footer>
+    <Footer className="text-center bg-hust-red-dark/5 py-3">
+      <Text type="secondary">
+        © {new Date().getFullYear()} HUST Đại học BKHN 
+      </Text>
+    </Footer>
   );
 }
 

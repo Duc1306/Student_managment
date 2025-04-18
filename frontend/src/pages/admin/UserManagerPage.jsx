@@ -1,284 +1,254 @@
-import React, { useState, useEffect } from "react";
-import api from "../../api";
+// src/pages/admin/UserManagerPage.jsx
+import { useState, useEffect } from "react";
+import {
+  Card,
+  Row,
+  Col,
+  Form,
+  Input,
+  Select,
+  Button,
+  Table,
+  Modal,
+  Popconfirm,
+  Pagination as AntPagination,
+  message,
+} from "antd";
+import {
+  UserOutlined,
+  LockOutlined,
+  PlusCircleOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  SearchOutlined,
+  TeamOutlined,
+} from "@ant-design/icons";
 import HustHeader from "../../components/layout/HustHeader";
 import HustFooter from "../../components/layout/HustFooter";
+import api from "../../api";
 
-import Pagination from "../../components/pagination/Pagination";
-import useFetchData from "../../hooks/useFetchData";
+const { Option } = Select;
 
 function UserManagerPage() {
   const [users, setUsers] = useState([]);
-  const [newUser, setNewUser] = useState({
-    username: "",
-    password: "",
-    role: "student",
-  });
-  const [keyword, setKeyword] = useState("");
-  const {
-    data: usersData,
-    meta,
-    loading,
-    refetch,
-  } = useFetchData("/users", { keyword, page: 1, limit: 6 });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [searchKeyword, setSearchKeyword] = useState("");
 
-  // State cho modal chỉnh sửa User
   const [showEditModal, setShowEditModal] = useState(false);
   const [userToEdit, setUserToEdit] = useState(null);
-  const [editUserData, setEditUserData] = useState({
-    username: "",
-    password: "",
-    role: "student",
-  });
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-    refetch({ keyword, page: 1 });
-  };
-
-  const handlePageChange = (newPage) => {
-    refetch({ page: newPage, keyword });
-  };
+  const [editForm] = Form.useForm();
+  const [createForm] = Form.useForm();
+    const [messageApi, contextHolder] = message.useMessage();
 
   const fetchUsers = async () => {
     try {
-      const res = await api.get("/users"); // Giả sử GET /users
-      setUsers(res.data);
+      const res = await api.get("/users", {
+        params: { page: currentPage, limit: 6, keyword: searchKeyword },
+      });
+      setUsers(res.data.data);
+      setTotalPages(res.data.meta.totalPages);
     } catch (err) {
       console.error(err);
-      alert("Lỗi tải danh sách user");
+      messageApi.error("Lỗi tải danh sách user");
     }
   };
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [currentPage, searchKeyword]);
 
-  const handleCreateUser = async () => {
+  const handleCreate = async (values) => {
     try {
-      await api.post("/users", newUser);
-      alert("Tạo user thành công");
-      setNewUser({ username: "", password: "", role: "student" });
+      await api.post("/users", values);
+      messageApi.success("Tạo user thành công!");
+      createForm.resetFields();
+      setCurrentPage(1);
       fetchUsers();
-      refetch();
     } catch (err) {
       console.error(err);
-      alert("Lỗi tạo user");
+      messageApi.error("Lỗi tạo user");
     }
   };
 
-  const handleDeleteUser = async (userId) => {
-    if (!window.confirm("Xóa user này?")) return;
+  const handleSearch = ({ keyword }) => {
+    setCurrentPage(1);
+    setSearchKeyword(keyword || "");
+  };
+
+  const handleDelete = async (id) => {
     try {
-      await api.delete(`/users/${userId}`);
+      await api.delete(`/users/${id}`);
+      messageApi.success("Xoá user thành công");
       fetchUsers();
-      refetch();
     } catch (err) {
       console.error(err);
-      alert("Xóa user thất bại");
+      messageApi.error("Xoá user thất bại");
     }
   };
 
-  // --- Xử lý chỉnh sửa User ---
-  const handleEditClick = (user) => {
-    setUserToEdit(user);
-    setEditUserData({
-      username: user.username,
-      password: "", // Để trống nếu không muốn thay đổi mật khẩu
-      role: user.role,
-    });
+  const handleEditClick = (record) => {
+    setUserToEdit(record);
+    editForm.setFieldsValue({ username: record.username, role: record.role });
     setShowEditModal(true);
-  };
-
-  const handleEditChange = (e) => {
-    setEditUserData({
-      ...editUserData,
-      [e.target.name]: e.target.value,
-    });
   };
 
   const handleSaveEdit = async () => {
     try {
-      await api.put(`/users/${userToEdit.id}`, editUserData);
-      alert("Cập nhật user thành công");
+      const values = await editForm.validateFields();
+      await api.put(`/users/${userToEdit.id}`, values);
+      messageApi.success("Cập nhật user thành công!");
       setShowEditModal(false);
       fetchUsers();
-      refetch();
     } catch (err) {
       console.error(err);
-      alert("Lỗi cập nhật user");
+      messageApi.error("Lỗi cập nhật user");
     }
   };
 
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  const columns = [
+    { title: "ID", dataIndex: "id", width: 60 },
+    { title: "Username", dataIndex: "username" },
+    { title: "Role", dataIndex: "role" },
+    {
+      title: "Hành động",
+      dataIndex: "actions",
+      render: (_, record) => (
+        <>
+          <Button
+            icon={<EditOutlined />}
+            size="small"
+            onClick={() => handleEditClick(record)}
+          />
+          <Popconfirm
+            title="Xoá user này?"
+            onConfirm={() => handleDelete(record.id)}
+          >
+            <Button
+              icon={<DeleteOutlined />}
+              danger
+              size="small"
+              className="ml-2"
+            />
+          </Popconfirm>
+        </>
+      ),
+    },
+  ];
+
   return (
-    <div className="container my-4">
+    <div className="container mx-auto py-6">
+      {contextHolder}
       <HustHeader
         title="Quản lý User"
         subtitle="Tạo, chỉnh sửa hoặc xoá tài khoản người dùng"
-        icon="people-fill"
+        icon={<TeamOutlined />}
       />
-      <div className="card shadow-sm mb-4">
-        <div className="card-body">
-          <h5>
-            <i className="bi bi-plus-circle me-1"></i>Tạo User
-          </h5>
-          <div className="row mb-3">
-            <div className="col-md-4">
-              <label className="form-label">Username</label>
-              <input
-                className="form-control"
-                value={newUser.username}
-                onChange={(e) =>
-                  setNewUser({ ...newUser, username: e.target.value })
-                }
-              />
-            </div>
-            <div className="col-md-4">
-              <label className="form-label">Password</label>
-              <input
-                className="form-control"
-                value={newUser.password}
-                onChange={(e) =>
-                  setNewUser({ ...newUser, password: e.target.value })
-                }
-              />
-            </div>
-            <div className="col-md-4">
-              <label className="form-label">Role</label>
-              <select
-                className="form-select"
-                value={newUser.role}
-                onChange={(e) =>
-                  setNewUser({ ...newUser, role: e.target.value })
-                }
-              >
-                <option value="admin">Admin</option>
-                <option value="teacher">Teacher</option>
-                <option value="student">Student</option>
-              </select>
-            </div>
-          </div>
-          <button className="btn btn-hust" onClick={handleCreateUser}>
-            <i className="bi bi-plus-circle me-1"></i>Tạo
-          </button>
-        </div>
-      </div>
-      <div className="card shadow-sm">
-        <div className="card-body">
-          <h5>
-            <i className="bi bi-table me-1"></i>Danh sách User
-          </h5>
-          <table className="table table-bordered table-hover">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Username</th>
-                <th>Role</th>
-                <th>Hành động</th>
-              </tr>
-            </thead>
-            <tbody>
-              {usersData.map((u) => (
-                <tr key={u.id}>
-                  <td>{u.id}</td>
-                  <td>{u.username}</td>
-                  <td>{u.role}</td>
-                  <td>
-                    <button
-                      className="btn btn-sm btn-primary me-2"
-                      onClick={() => handleEditClick(u)}
-                    >
-                      <i className="bi bi-pencil-square"></i> Sửa
-                    </button>
-                    <button
-                      className="btn btn-danger btn-sm"
-                      onClick={() => handleDeleteUser(u.id)}
-                    >
-                      <i className="bi bi-trash"></i> Xoá
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {meta && (
-            <Pagination
-              currentPage={meta.page}
-              totalPages={meta.totalPages}
-              onPageChange={handlePageChange}
-            />
-          )}
-        </div>
-      </div>
 
-      {/* Modal chỉnh sửa User */}
-      {showEditModal && (
-        <div className="modal show d-block" tabIndex="-1">
-          <div className="modal-dialog">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Chỉnh sửa User</h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={() => setShowEditModal(false)}
-                ></button>
-              </div>
-              <div className="modal-body">
-                <div className="mb-3">
-                  <label className="form-label">Username</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    name="username"
-                    value={editUserData.username}
-                    onChange={handleEditChange}
-                  />
-                </div>
-                <div className="mb-3">
-                  <label className="form-label">Password</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    name="password"
-                    placeholder="Để trống nếu không thay đổi"
-                    value={editUserData.password}
-                    onChange={handleEditChange}
-                  />
-                </div>
-                <div className="mb-3">
-                  <label className="form-label">Role</label>
-                  <select
-                    className="form-select"
-                    name="role"
-                    value={editUserData.role}
-                    onChange={handleEditChange}
-                  >
-                    <option value="admin">Admin</option>
-                    <option value="teacher">Teacher</option>
-                    <option value="student">Student</option>
-                  </select>
-                </div>
-              </div>
-              <div className="modal-footer">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => setShowEditModal(false)}
-                >
-                  Hủy
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={handleSaveEdit}
-                >
-                  Lưu thay đổi
-                </button>
-              </div>
-            </div>
-          </div>
+      <Card className="mb-6">
+        <Form form={createForm} layout="vertical" onFinish={handleCreate}>
+          <Row gutter={16}>
+            <Col xs={24} md={8}>
+              <Form.Item
+                label="Username"
+                name="username"
+                rules={[{ required: true, message: "Nhập username" }]}
+              >
+                <Input prefix={<UserOutlined />} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item
+                label="Password"
+                name="password"
+                rules={[{ required: true, message: "Nhập password" }]}
+              >
+                <Input.Password prefix={<LockOutlined />} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item
+                label="Role"
+                name="role"
+                rules={[{ required: true, message: "Chọn role" }]}
+              >
+                <Select placeholder="Chọn role">
+                  <Option value="admin">Admin</Option>
+                  <Option value="teacher">Teacher</Option>
+                  <Option value="student">Student</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+          <Button
+            type="primary"
+            icon={<PlusCircleOutlined />}
+            htmlType="submit"
+          >
+            Tạo user
+          </Button>
+        </Form>
+      </Card>
+
+      <Form layout="inline" onFinish={handleSearch} className="mb-4">
+        <Form.Item name="keyword">
+          <Input prefix={<SearchOutlined />} placeholder="Tìm kiếm user..." />
+        </Form.Item>
+        <Button type="primary" htmlType="submit">
+          Tìm kiếm
+        </Button>
+      </Form>
+
+      <Card>
+        <Table
+          rowKey="id"
+          dataSource={users}
+          columns={columns}
+          pagination={false}
+        />
+        <div className="flex justify-center items-center mt-4">
+          <AntPagination
+            current={currentPage}
+            total={totalPages * 6}
+            pageSize={6}
+            onChange={handlePageChange}
+          />
         </div>
-      )}
+      </Card>
+
+      <Modal
+        title="Chỉnh sửa User"
+        open={showEditModal}
+        onCancel={() => setShowEditModal(false)}
+        onOk={handleSaveEdit}
+        okText="Lưu"
+        cancelText="Hủy"
+      >
+        <Form form={editForm} layout="vertical">
+          <Form.Item
+            label="Username"
+            name="username"
+            rules={[{ required: true, message: "Nhập username" }]}
+          >
+            <Input prefix={<UserOutlined />} />
+          </Form.Item>
+          <Form.Item
+            label="Role"
+            name="role"
+            rules={[{ required: true, message: "Chọn role" }]}
+          >
+            <Select>
+              <Option value="admin">Admin</Option>
+              <Option value="teacher">Teacher</Option>
+              <Option value="student">Student</Option>
+            </Select>
+          </Form.Item>
+        </Form>
+      </Modal>
 
       <HustFooter />
     </div>

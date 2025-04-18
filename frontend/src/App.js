@@ -2,6 +2,9 @@
 import React, { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import HustNavbar from "./components/layout/HustNavbar";
+import { ConfigProvider, theme as antdTheme } from "antd";
+import viVN from "antd/locale/vi_VN";
+
 
 import "./App.css";
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
@@ -37,37 +40,54 @@ function App() {
   }, [darkMode]);
 
   return (
-    <BrowserRouter>
-      <HustNavbar darkMode={darkMode} setDarkMode={setDarkMode} />
-      <Routes>
-        <Route
-          path="/"
-          element={
-            <div className="container my-4">
-              <h1>Trang chủ</h1>
-            </div>
-          }
-        />
-        <Route path="/login" element={<LoginPage />} />
+    <ConfigProvider
+      locale={viVN}
+      theme={{
+        token: { colorPrimary: "#AF1E2D" },
+        // thêm phần này để bật/tắt dark mode cho AntD
+        algorithm: darkMode
+          ? antdTheme.darkAlgorithm
+          : antdTheme.defaultAlgorithm,
+      }}
+    >
+      <BrowserRouter>
+        <HustNavbar darkMode={darkMode} setDarkMode={setDarkMode} />
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <div className="container my-4">
+                <h1>Trang chủ</h1>
+              </div>
+            }
+          />
+          <Route path="/login" element={<LoginPage />} />
 
-        {/* Admin */}
-        <Route path="/admin" element={<AdminDashboardPage />}>
-          <Route path="users" element={<UserManagerPage />} />
-          <Route path="subjects" element={<SubjectManagerPage />} />
-          <Route path="classes" element={<ClassManagerPage />} />
-          <Route path="reports" element={<AdminReportPage />} />
-        </Route>
+          {/* Admin */}
+          <Route path="/admin" element={<AdminDashboardPage />}>
+            <Route path="users" element={<UserManagerPage />} />
+            <Route path="subjects" element={<SubjectManagerPage />} />
+            <Route path="classes" element={<ClassManagerPage />} />
+            <Route path="reports" element={<AdminReportPage />} />
+          </Route>
 
-        {/* Teacher */}
-        <Route path="/teacher" element={<TeacherDashboardPage />} />
-        <Route path="/teacher/class/:id" element={<TeacherClassDetailPage />} />
-        <Route path="/teacher/report/:id" element={<TeacherReportPage />} />
+          {/* Teacher */}
+          <Route path="/teacher" element={<TeacherDashboardPage />} />
+          <Route
+            path="/teacher/class/:id"
+            element={<TeacherClassDetailPage />}
+          />
+          <Route path="/teacher/report/:id" element={<TeacherReportPage />} />
 
-        {/* Student */}
-        <Route path="/student" element={<StudentDashboardPage />} />
-        <Route path="/student/class/:id" element={<StudentClassDetailPage />} />
-      </Routes>
-    </BrowserRouter>
+          {/* Student */}
+          <Route path="/student" element={<StudentDashboardPage />} />
+          <Route
+            path="/student/class/:id"
+            element={<StudentClassDetailPage />}
+          />
+        </Routes>
+      </BrowserRouter>
+    </ConfigProvider>
   );
 }
 

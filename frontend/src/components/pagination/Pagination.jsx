@@ -1,66 +1,28 @@
-import React from "react";
+// src/components/pagination/Pagination.jsx
+import { Pagination as AntPagination } from "antd";
 
-const Pagination = ({ currentPage, totalPages, onPageChange }) => {
-  // Tạo mảng số trang để hiển thị (bạn có thể điều chỉnh logic hiển thị số trang)
-  const pageNumbers = [];
-  for (let i = 1; i <= totalPages; i++) {
-    pageNumbers.push(i);
-  }
+/**
+ * Wrapper component for Ant Design Pagination with Tailwind centering
+ * @param {number} currentPage - Trang hiện tại (1-indexed)
+ * @param {number} totalPages - Tổng số trang
+ * @param {function} onPageChange - Callback khi thay đổi trang (newPage)
+ * @param {number} pageSize - Số bản ghi mỗi trang 
+ */
+function Pagination({ currentPage, totalPages, onPageChange, pageSize = 10 }) {
+  // Tính tổng số bản ghi để AntPagination hiện đúng
+  const totalItems = totalPages * pageSize;
 
   return (
-    <nav>
-      <ul className="pagination justify-content-center">
-        {/* Nút đến trang đầu tiên */}
-        <li className={`page-item ${currentPage === 1 && "disabled"}`}>
-          <button className="page-link" onClick={() => onPageChange(1)}>
-            First
-          </button>
-        </li>
-
-        {/* Nút trang trước */}
-        <li className={`page-item ${currentPage === 1 && "disabled"}`}>
-          <button
-            className="page-link"
-            onClick={() => onPageChange(currentPage - 1)}
-          >
-            Prev
-          </button>
-        </li>
-
-        {/* Hiển thị số trang */}
-        {pageNumbers.map((number) => (
-          <li
-            key={number}
-            className={`page-item ${currentPage === number && "active"}`}
-          >
-            <button className="page-link" onClick={() => onPageChange(number)}>
-              {number}
-            </button>
-          </li>
-        ))}
-
-        {/* Nút trang kế */}
-        <li className={`page-item ${currentPage === totalPages && "disabled"}`}>
-          <button
-            className="page-link"
-            onClick={() => onPageChange(currentPage + 1)}
-          >
-            Next
-          </button>
-        </li>
-
-        {/* Nút đến trang cuối cùng */}
-        <li className={`page-item ${currentPage === totalPages && "disabled"}`}>
-          <button
-            className="page-link"
-            onClick={() => onPageChange(totalPages)}
-          >
-            Last
-          </button>
-        </li>
-      </ul>
-    </nav>
+    <div className="flex justify-center my-4">
+      <AntPagination
+        current={currentPage}
+        total={totalItems}
+        pageSize={pageSize}
+        showSizeChanger={false}
+        onChange={onPageChange}
+      />
+    </div>
   );
-};
+}
 
 export default Pagination;
