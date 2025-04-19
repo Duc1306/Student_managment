@@ -26,13 +26,13 @@ const User = sequelize.define(
       // Tự động hash password trước khi tạo
       beforeCreate: async (user, options) => {
         const salt = await bcrypt.genSalt(10);
-        user.password = await bcrypt.hash(user.password, salt);
+        user.password = await bcrypt.hash(String(user.password), salt);;
       },
       // Tự động hash password trước khi update (nếu password thay đổi)
       beforeUpdate: async (user, options) => {
         if (user.changed("password")) {
           const salt = await bcrypt.genSalt(10);
-          user.password = await bcrypt.hash(user.password, salt);
+          user.password = await bcrypt.hash(String(user.password), salt);;
         }
       },
     },

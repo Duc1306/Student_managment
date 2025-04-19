@@ -354,9 +354,9 @@ module.exports = {
       const [user] = await User.findOrCreate({
         where: { username: row.ma_sinh_vien },
         defaults: {
-          password: await bcrypt.hash(row.password, 10),
-          role: 'student'
-        }
+          password: row.password,
+          role: "student",
+        },
       });
       const [student] = await Student.findOrCreate({
         where: { ma_sinh_vien: row.ma_sinh_vien },
