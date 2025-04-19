@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { Row, Col, Card, Statistic, theme } from "antd";
-import { Bar } from "react-chartjs-2";
 import {
   BookOutlined,
   TeamOutlined,
@@ -8,6 +7,16 @@ import {
   CheckCircleOutlined,
   BarChartOutlined,
 } from "@ant-design/icons";
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Cell,
+} from "recharts";
 import api from "../../api";
 import HustHeader from "../../components/layout/HustHeader";
 import HustFooter from "../../components/layout/HustFooter";
@@ -23,26 +32,17 @@ function AdminReportPage() {
       .catch(console.error);
   }, []);
 
-  const chartData = {
-    labels: ["Có mặt", "Muộn", "Vắng"],
-    datasets: [
-      {
-        label: "Số lượt điểm danh",
-        data: overviewData
-          ? [
-              overviewData.attendanceSummary.present,
-              overviewData.attendanceSummary.late,
-              overviewData.attendanceSummary.absent,
-            ]
-          : [],
-        backgroundColor: [
-          token.colorSuccess,
-          token.colorWarning,
-          token.colorError,
-        ],
-      },
-    ],
-  };
+  // Chuẩn bị data cho Recharts
+  const chartData = overviewData
+    ? [
+        { name: "Có mặt", value: overviewData.attendanceSummary.present },
+        { name: "Muộn", value: overviewData.attendanceSummary.late },
+        { name: "Vắng", value: overviewData.attendanceSummary.absent },
+      ]
+    : [];
+
+  // Dùng token màu từ Ant Design để làm màu thanh
+  const colors = [token.colorSuccess, token.colorWarning, token.colorError];
 
   return (
     <div className="container mx-auto py-6">
@@ -98,7 +98,22 @@ function AdminReportPage() {
           </Row>
 
           <Card className="shadow">
-            <Bar data={chartData} options={{ responsive: true }} />
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart
+                data={chartData}
+                margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="value">
+                  {chartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={colors[index]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
           </Card>
         </>
       ) : (

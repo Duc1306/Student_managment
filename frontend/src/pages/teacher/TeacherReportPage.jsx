@@ -1,23 +1,30 @@
-// src/pages/teacher/TeacherReportPage.jsx
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import dayjs from "dayjs";
-import { Layout, Card, DatePicker, Row, Col, Typography, message ,Form} from "antd";
-import { Bar } from "react-chartjs-2";
+import {
+  Layout,
+  Card,
+  DatePicker,
+  Row,
+  Col,
+  Typography,
+  message,
+  Form,
+} from "antd";
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Cell,
+} from "recharts";
 import { CalendarOutlined } from "@ant-design/icons";
 import HustHeader from "../../components/layout/HustHeader";
 import HustFooter from "../../components/layout/HustFooter";
 import api from "../../api";
-import {
-  Chart as ChartJS,
-  BarElement,
-  CategoryScale,
-  LinearScale,
-  Tooltip,
-  Legend,
-} from "chart.js";
-
-ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
 const { Content } = Layout;
 const { Title, Text } = Typography;
@@ -36,24 +43,18 @@ export default function TeacherReportPage() {
     api
       .get("/attendance/report", { params })
       .then((res) => setReportData(res.data))
-      .catch((err) => {
-        console.error(err);
-        messageApi.error("Lỗi tải báo cáo");
-      });
-  }, [id, date]);
+      .catch(() => messageApi.error("Lỗi tải báo cáo"));
+  }, [id, date, messageApi]);
 
-  const chartData = {
-    labels: ["Có mặt", "Muộn", "Vắng"],
-    datasets: [
-      {
-        label: "Số lượt điểm danh",
-        data: reportData
-          ? [reportData.present, reportData.late, reportData.absent]
-          : [],
-        backgroundColor: ["#52c41a", "#faad14", "#f5222d"],
-      },
-    ],
-  };
+  // Dữ liệu cho Recharts
+  const chartData = reportData
+    ? [
+        { name: "Có mặt", value: reportData.present },
+        { name: "Muộn", value: reportData.late },
+        { name: "Vắng", value: reportData.absent },
+      ]
+    : [];
+  const colors = ["#52c41a", "#faad14", "#f5222d"];
 
   return (
     <Layout className="min-h-screen">
@@ -88,7 +89,23 @@ export default function TeacherReportPage() {
                 <Title level={5}>Vắng: {reportData.absent}</Title>
               </Col>
             </Row>
-            <Bar data={chartData} options={{ responsive: true }} />
+
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart
+                data={chartData}
+                margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="value">
+                  {chartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={colors[index]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
           </Card>
         ) : (
           <Text>Đang tải dữ liệu báo cáo...</Text>

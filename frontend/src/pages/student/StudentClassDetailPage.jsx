@@ -1,22 +1,20 @@
-// src/pages/student/StudentClassDetailPage.jsx
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Card, List, Table, Tag, Typography, Row, Col } from "antd";
-import { Bar } from "react-chartjs-2";
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Cell,
+} from "recharts";
 import HustHeader from "../../components/layout/HustHeader";
 import HustFooter from "../../components/layout/HustFooter";
 import api from "../../api";
-import {
-  Chart as ChartJS,
-  BarElement,
-  CategoryScale,
-  LinearScale,
-  Tooltip,
-  Legend,
-} from "chart.js";
 import { CalendarOutlined } from "@ant-design/icons";
-
-ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
 const { Title } = Typography;
 
@@ -77,20 +75,13 @@ export function StudentClassDetailPage() {
     },
   ];
 
-  const chartData = {
-    labels: ["Có mặt", "Muộn", "Vắng"],
-    datasets: [
-      {
-        label: "Số lượt điểm danh",
-        data: [
-          attendanceSummary.present,
-          attendanceSummary.late,
-          attendanceSummary.absent,
-        ],
-        backgroundColor: ["#52c41a", "#faad14", "#f5222d"],
-      },
-    ],
-  };
+  // Dữ liệu cho Recharts
+  const chartData = [
+    { name: "Có mặt", value: attendanceSummary.present },
+    { name: "Muộn", value: attendanceSummary.late },
+    { name: "Vắng", value: attendanceSummary.absent },
+  ];
+  const colors = ["#52c41a", "#faad14", "#f5222d"];
 
   return (
     <div className="container mx-auto py-6">
@@ -140,11 +131,28 @@ export function StudentClassDetailPage() {
             <Title level={5}>Vắng: {attendanceSummary.absent}</Title>
           </Col>
         </Row>
-        <Bar data={chartData} options={{ responsive: true }} />
+
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart
+            data={chartData}
+            margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="name" />
+            <YAxis />
+            <Tooltip />
+            <Bar dataKey="value">
+              {chartData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={colors[index]} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
       </Card>
 
       <HustFooter />
     </div>
   );
 }
-export default StudentClassDetailPage
+
+export default StudentClassDetailPage;
