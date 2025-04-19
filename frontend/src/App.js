@@ -18,6 +18,7 @@ import LoginPage from "./pages/auth/LoginPage";
 import AdminReportPage from "./pages/admin/AdminReportPage";
 import TeacherReportPage from "./pages/teacher/TeacherReportPage";
 import StudentClassDetailPage from "./pages/student/StudentClassDetailPage";
+import Dashboard from "./pages/Dashboard";
 
 function App() {
   // Dark Mode
@@ -56,9 +57,7 @@ function App() {
           <Route
             path="/"
             element={
-              <div className="container my-4">
-                <h1>Trang chủ</h1>
-              </div>
+              <Dashboard/>
             }
           />
           <Route path="/login" element={<LoginPage />} />
