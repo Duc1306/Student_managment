@@ -39,7 +39,7 @@ function UserManagerPage() {
   const [userToEdit, setUserToEdit] = useState(null);
   const [editForm] = Form.useForm();
   const [createForm] = Form.useForm();
-    const [messageApi, contextHolder] = message.useMessage();
+  const [messageApi, contextHolder] = message.useMessage();
 
   const fetchUsers = async () => {
     try {
@@ -89,13 +89,21 @@ function UserManagerPage() {
 
   const handleEditClick = (record) => {
     setUserToEdit(record);
-    editForm.setFieldsValue({ username: record.username, role: record.role });
+    editForm.setFieldsValue({
+      username: record.username,
+      role: record.role,
+      password: "",
+    });
     setShowEditModal(true);
   };
 
   const handleSaveEdit = async () => {
     try {
       const values = await editForm.validateFields();
+      // Nếu người dùng để password trống thì không gửi field này
+      if(!values.password){
+        delete values.password;
+      }
       await api.put(`/users/${userToEdit.id}`, values);
       messageApi.success("Cập nhật user thành công!");
       setShowEditModal(false);
@@ -246,6 +254,21 @@ function UserManagerPage() {
               <Option value="teacher">Teacher</Option>
               <Option value="student">Student</Option>
             </Select>
+          </Form.Item>
+
+          <Form.Item
+            label="Password mới"
+            name="password"
+            rules={
+              [
+                /* không bắt buộc */
+              ]
+            }
+          >
+            <Input.Password
+              prefix={<LockOutlined />}
+              placeholder="Để trống nếu không đổi mật khẩu"
+            />
           </Form.Item>
         </Form>
       </Modal>

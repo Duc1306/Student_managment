@@ -288,14 +288,14 @@ export default function TeacherClassDetailPage() {
                 onChange={handleEditChange}
               />
             </Form.Item>
-            <Form.Item label="Mật khẩu">
+            {/* <Form.Item label="Mật khẩu">
               <Input.Password
                 name="password"
                 placeholder="Để trống nếu không thay đổi"
                 value={editFormData.password}
                 onChange={handleEditChange}
               />
-            </Form.Item>
+            </Form.Item> */}
           </Form>
         </Modal>
       </Content>

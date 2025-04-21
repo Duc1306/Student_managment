@@ -1,10 +1,8 @@
-
 import React, { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import HustNavbar from "./components/layout/HustNavbar";
 import { ConfigProvider, theme as antdTheme } from "antd";
 import viVN from "antd/locale/vi_VN";
-
 
 import "./App.css";
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
@@ -54,12 +52,7 @@ function App() {
       <BrowserRouter>
         <HustNavbar darkMode={darkMode} setDarkMode={setDarkMode} />
         <Routes>
-          <Route
-            path="/"
-            element={
-              <Dashboard/>
-            }
-          />
+          <Route path="/" element={<Dashboard />} />
           <Route path="/login" element={<LoginPage />} />
 
           {/* Admin */}
