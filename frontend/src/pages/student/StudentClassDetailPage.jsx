@@ -1,6 +1,8 @@
+// src/pages/student/StudentClassDetailPage.jsx
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Card, List, Table, Tag, Typography, Row, Col } from "antd";
+import dayjs from "dayjs";
+import { Card, List, Table, Tag, Typography, Row, Col, DatePicker } from "antd";
 import {
   ResponsiveContainer,
   BarChart,
@@ -26,20 +28,25 @@ export function StudentClassDetailPage() {
     present: 0,
     absent: 0,
   });
+  const [date, setDate] = useState(dayjs());
 
   useEffect(() => {
-    const fetchDetail = async () => {
+    async function fetchDetail() {
       try {
         const res = await api.get(`/classes/${id}/students`);
         setClassDetail(res.data);
       } catch (err) {
         console.error(err);
       }
-    };
-    const fetchAttendance = async () => {
+    }
+    async function fetchAttendance() {
       try {
-        const res = await api.get("/attendance", { params: { classId: id } });
-        // res.data should include: date, status, reason, Class info
+        const res = await api.get("/attendance", {
+          params: {
+            classId: id,
+            date: date.format("YYYY-MM-DD"),
+          },
+        });
         setAttendanceRecords(res.data);
 
         const summary = { present: 0, absent: 0 };
@@ -51,10 +58,10 @@ export function StudentClassDetailPage() {
       } catch (err) {
         console.error(err);
       }
-    };
+    }
     fetchDetail();
     fetchAttendance();
-  }, [id]);
+  }, [id, date]);
 
   const columns = [
     { title: "Ngày", dataIndex: "date", key: "date" },
@@ -102,6 +109,14 @@ export function StudentClassDetailPage() {
         icon={<CalendarOutlined />}
       />
 
+      <Card className="mb-6">
+        <DatePicker
+          value={date}
+          onChange={(d) => setDate(d || dayjs())}
+          allowClear={false}
+        />
+      </Card>
+
       <Card title="Danh sách học sinh" className="mb-6">
         {classDetail?.students?.length ? (
           <List
@@ -121,7 +136,7 @@ export function StudentClassDetailPage() {
         <Table
           dataSource={attendanceRecords}
           columns={columns}
-          rowKey={(rec, idx) => rec.id || idx}
+          rowKey={(rec) => rec.id}
           pagination={false}
         />
       </Card>

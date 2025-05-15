@@ -1,3 +1,5 @@
+// controllers/attendanceController.js
+
 const { Attendance, Student, Class } = require("../models");
 const xlsx = require("xlsx");
 
@@ -18,10 +20,10 @@ module.exports = {
           return res.status(404).json({ error: "Student not found" });
         }
         filter.student_id = student.id;
-        // Nếu có query param classId, thêm lọc theo lớp
-        if (req.query.classId) {
-          filter.class_id = req.query.classId;
-        }
+        // Lọc theo classId nếu có
+        if (req.query.classId) filter.class_id = req.query.classId;
+        // Lọc theo date nếu có
+        if (req.query.date) filter.date = req.query.date;
       } else {
         // Đối với teacher hoặc admin, cho phép lọc theo query params
         const { classId, date } = req.query;
@@ -68,12 +70,16 @@ module.exports = {
       res.status(500).json({ error: err.message });
     }
   },
+
+  // API PUT /attendance/:recordId để cập nhật status và reason
   updateRecord: async (req, res) => {
     try {
       const { status, reason } = req.body;
       const record = await Attendance.findByPk(req.params.recordId);
       if (!record) {
-        return res.status(404).json({ error: "Không tìm thấy bản ghi điểm danh" });
+        return res
+          .status(404)
+          .json({ error: "Không tìm thấy bản ghi điểm danh" });
       }
       record.status = status;
       // Chỉ lưu lý do khi absent
@@ -103,14 +109,13 @@ module.exports = {
       res.status(500).json({ error: err.message });
     }
   },
+
   exportAttendance: async (req, res) => {
     try {
-      // Lấy thông tin điểm danh của lớp, dựa trên query param hoặc đường dẫn. Ví dụ:
-      const { classId, date } = req.query; // lấy từ query string
-      // Giả sử bạn có một mối quan hệ giữa Attendance và Student
+      const { classId, date } = req.query;
       const attendanceRecords = await Attendance.findAll({
         where: { class_id: classId, date },
-        include: [ Student],
+        include: [Student],
       });
 
       const data = attendanceRecords.map((record) => ({

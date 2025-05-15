@@ -13,6 +13,10 @@ const Attendance = sequelize.define(
       type: DataTypes.ENUM("present", "absent", "late"),
       defaultValue: "present",
     },
+    reason: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
   },
   {
     tableName: "attendance",
