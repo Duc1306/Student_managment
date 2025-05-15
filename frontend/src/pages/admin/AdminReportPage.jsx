@@ -36,7 +36,7 @@ function AdminReportPage() {
   const chartData = overviewData
     ? [
         { name: "Có mặt", value: overviewData.attendanceSummary.present },
-        { name: "Muộn", value: overviewData.attendanceSummary.late },
+        
         { name: "Vắng", value: overviewData.attendanceSummary.absent },
       ]
     : [];
@@ -88,7 +88,7 @@ function AdminReportPage() {
                   title="Tổng điểm danh"
                   value={
                     overviewData.attendanceSummary.present +
-                    overviewData.attendanceSummary.late +
+                    
                     overviewData.attendanceSummary.absent
                   }
                   prefix={<CheckCircleOutlined />}

@@ -8,7 +8,7 @@ module.exports = {
       const totalStudents = await Student.count();
 
       const allAttendances = await Attendance.findAll();
-      const attendanceSummary = { present: 0, absent: 0, late: 0 };
+      const attendanceSummary = { present: 0, absent: 0 };
       allAttendances.forEach((record) => {
         attendanceSummary[record.status] =
           (attendanceSummary[record.status] || 0) + 1;

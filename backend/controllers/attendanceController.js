@@ -68,6 +68,23 @@ module.exports = {
       res.status(500).json({ error: err.message });
     }
   },
+  updateRecord: async (req, res) => {
+    try {
+      const { status, reason } = req.body;
+      const record = await Attendance.findByPk(req.params.recordId);
+      if (!record) {
+        return res.status(404).json({ error: "Không tìm thấy bản ghi điểm danh" });
+      }
+      record.status = status;
+      // Chỉ lưu lý do khi absent
+      record.reason = status === "absent" ? reason : "";
+      await record.save();
+      return res.json(record);
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: err.message });
+    }
+  },
 
   // API GET /attendance/report để thống kê điểm danh (các bản ghi được lọc theo classId, date)
   report: async (req, res) => {

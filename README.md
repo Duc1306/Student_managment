@@ -49,9 +49,8 @@ student-managment-sigma.vercel.app
 
 ---
 
-## 📂 Cấu trúc thư mục chính
-
-.
+# 📂 Cấu trúc thư mục chính
+\`\`\`
 backend/                     # Phần backend Node.js + Express
 │   config/                  # Cấu hình kết nối database (Sequelize)
 │   │    database.js
@@ -106,30 +105,30 @@ frontend/                   # Giao diện frontend React
 │   │   │   layout/         # Header, Navbar, Footer
 │   │   │   │   HustHeader.jsx
 │   │   │   │   HustNavbar.jsx
-│   │   │   │   └── HustFooter.jsx
+│   │   │   │   HustFooter.jsx
 │   │   │   export/         # Component xuất dữ liệu
 │   │   │   │   ExportAttendance.jsx
-│   │   │   │   └── ExportClasses.jsx
+│   │   │   │   ExportClasses.jsx
 │   │   │   import/         # Component nhập dữ liệu
-│   │   │   │   └── ImportStudents.jsx
-│   │   │   └── pagination/     # Phân trang dữ liệu
-│   │   │       └── Pagination.jsx
+│   │   │   │   ImportStudents.jsx
+│   │   │   pagination/     # Phân trang dữ liệu
+│   │   │       Pagination.jsx
 │   │   pages/              # Trang chia theo vai trò người dùng
 │   │   │   admin/          # Trang dành cho quản trị viên
 │   │   │   │   AdminDashboardPage.jsx
 │   │   │   │   UserManagerPage.jsx
 │   │   │   │   ClassManagerPage.jsx
 │   │   │   │   SubjectManagerPage.jsx
-│   │   │   │   └── AdminReportPage.jsx
+│   │   │   │    AdminReportPage.jsx
 │   │   │   teacher/        # Trang dành cho giáo viên
 │   │   │   │   TeacherDashboardPage.jsx
 │   │   │   │   TeacherClassDetailPage.jsx
-│   │   │   │   └── TeacherReportPage.jsx
+│   │   │   │   TeacherReportPage.jsx
 │   │   │   student/        # Trang dành cho sinh viên
 │   │   │   │   StudentDashboardPage.jsx
-│   │   │   │   └── StudentClassDetailPage.jsx
-│   │   │   └── auth/           # Trang xác thực (login)
-│   │   │       └── LoginPage.jsx
+│   │   │   │   StudentClassDetailPage.jsx
+│   │   │   └auth/           # Trang xác thực (login)
+│   │   │       LoginPage.jsx
 │   tailwind.config.js      # Cấu hình TailwindCSS
 │   └── package.json            # Thông tin project và dependencies
 │
@@ -137,7 +136,7 @@ uploads/                    # Chứa file upload từ backend (ảnh, excel)
 README.md                   # Mô tả dự án
 └── .git/                       # Thư mục git version control
 
-
+\`\`\`
 ## ⚙️ Cài đặt & chạy dự án
 
 ### Backend

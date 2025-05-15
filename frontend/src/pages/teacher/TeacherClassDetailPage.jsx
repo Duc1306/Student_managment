@@ -14,6 +14,7 @@ import {
   Popconfirm,
   Input,
   message,
+  Tag
 } from "antd";
 import {
   CalendarOutlined,
@@ -49,6 +50,8 @@ export default function TeacherClassDetailPage() {
     dia_chi: "",
     password: "",
   });
+  const today = dayjs().format("YYYY-MM-DD");
+  
 
   const fetchData = async () => {
     try {
@@ -70,15 +73,14 @@ export default function TeacherClassDetailPage() {
     fetchData();
   }, [id]);
 
-  const handleStatusChange = (studentId, status) => {
-    setAttendanceData((prev) => ({ ...prev, [studentId]: status }));
+  const handleToggleStatus = (studentId) => {
+    setAttendanceData((prev) => ({
+      ...prev,
+      [studentId]: prev[studentId] === "present" ? "absent" : "present",
+    }));
   };
 
   const handleSaveAttendance = async () => {
-    if (!attendanceDate) {
-      messageApi.warning("Chọn ngày điểm danh");
-      return;
-    }
     const attendanceList = students.map((stu) => ({
       studentId: stu.id,
       status: attendanceData[stu.id],
@@ -86,7 +88,7 @@ export default function TeacherClassDetailPage() {
     try {
       await api.post("/attendance", {
         classId: id,
-        date: attendanceDate.format("YYYY-MM-DD"),
+        date: today,
         attendanceList,
       });
       messageApi.success("Điểm danh thành công!");
@@ -157,17 +159,18 @@ export default function TeacherClassDetailPage() {
     {
       title: "Trạng thái",
       key: "status",
-      render: (_, record) => (
-        <Select
-          value={attendanceData[record.id]}
-          onChange={(val) => handleStatusChange(record.id, val)}
-          size="small"
-        >
-          <Option value="present">Có mặt</Option>
-          <Option value="late">Muộn</Option>
-          <Option value="absent">Vắng</Option>
-        </Select>
-      ),
+      render: (_, record) => {
+        const isPresent = attendanceData[record.id] === "present";
+        return (
+          <Tag
+            color={isPresent ? "green" : "red"}
+            style={{ cursor: "pointer" }}
+            onClick={() => handleToggleStatus(record.id)}
+          >
+            {isPresent ? "Có mặt" : "Vắng"}
+          </Tag>
+        );
+      },
     },
     {
       title: "Hành động",
@@ -196,28 +199,33 @@ export default function TeacherClassDetailPage() {
       <Content className="container mx-auto py-6">
         <HustHeader
           title={`Chi tiết lớp: ${classDetail?.className || ""}`}
-          subtitle={`Môn: ${classDetail?.subject || ""} | GV: ${classDetail?.teacher || ""}`}
+          subtitle={`Môn: ${classDetail?.subject || ""} | GV: ${
+            classDetail?.teacher || ""
+          }`}
           icon={<CalendarOutlined />}
         />
 
         <Card className="mb-6">
           <Form layout="inline">
-            <Form.Item label="Chọn ngày">
-              <DatePicker onChange={(date) => setAttendanceDate(date)} />
-            </Form.Item>
             <Form.Item>
               <Button type="primary" onClick={handleSaveAttendance}>
-                Lưu điểm danh
+                Lưu điểm danh ({today})
               </Button>
             </Form.Item>
             <Form.Item>
-              <ExportAttendance classId={id} date={attendanceDate?.format("YYYY-MM-DD")} />
+              <ExportAttendance classId={id} date={today} />
             </Form.Item>
           </Form>
         </Card>
 
         <Card title="Danh sách học sinh" className="mb-6">
-          <Table n dataSource={students} columns={columns} rowKey="id" pagination={false} />
+          <Table
+            n
+            dataSource={students}
+            columns={columns}
+            rowKey="id"
+            pagination={false}
+          />
         </Card>
 
         <Card className="mb-6">
@@ -274,11 +282,15 @@ export default function TeacherClassDetailPage() {
             </Form.Item>
             <Form.Item label="Ngày sinh">
               <DatePicker
-                value={editFormData.ngay_sinh ? dayjs(editFormData.ngay_sinh) : null}
-                onChange={(d) => setEditFormData((prev) => ({
-                  ...prev,
-                  ngay_sinh: d ? d.format("YYYY-MM-DD") : "",
-                }))}
+                value={
+                  editFormData.ngay_sinh ? dayjs(editFormData.ngay_sinh) : null
+                }
+                onChange={(d) =>
+                  setEditFormData((prev) => ({
+                    ...prev,
+                    ngay_sinh: d ? d.format("YYYY-MM-DD") : "",
+                  }))
+                }
               />
             </Form.Item>
             <Form.Item label="Địa chỉ">

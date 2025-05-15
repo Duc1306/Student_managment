@@ -24,7 +24,6 @@ export function StudentClassDetailPage() {
   const [attendanceRecords, setAttendanceRecords] = useState([]);
   const [attendanceSummary, setAttendanceSummary] = useState({
     present: 0,
-    late: 0,
     absent: 0,
   });
 
@@ -40,10 +39,13 @@ export function StudentClassDetailPage() {
     const fetchAttendance = async () => {
       try {
         const res = await api.get("/attendance", { params: { classId: id } });
+        // res.data should include: date, status, reason, Class info
         setAttendanceRecords(res.data);
-        const summary = { present: 0, late: 0, absent: 0 };
+
+        const summary = { present: 0, absent: 0 };
         res.data.forEach((rec) => {
-          summary[rec.status] += 1;
+          if (rec.status === "present") summary.present += 1;
+          else summary.absent += 1;
         });
         setAttendanceSummary(summary);
       } catch (err) {
@@ -66,22 +68,27 @@ export function StudentClassDetailPage() {
       dataIndex: "status",
       key: "status",
       render: (status) => {
-        const color =
-          status === "present" ? "green" : status === "late" ? "orange" : "red";
-        const text =
-          status === "present" ? "Có mặt" : status === "late" ? "Muộn" : "Vắng";
-        return <Tag color={color}>{text}</Tag>;
+        const isPresent = status === "present";
+        return (
+          <Tag color={isPresent ? "green" : "red"}>
+            {isPresent ? "Có mặt" : "Vắng"}
+          </Tag>
+        );
       },
+    },
+    {
+      title: "Lý do (nếu vắng)",
+      dataIndex: "reason",
+      key: "reason",
+      render: (reason) => (reason ? reason : <span>–</span>),
     },
   ];
 
-  // Dữ liệu cho Recharts
   const chartData = [
     { name: "Có mặt", value: attendanceSummary.present },
-    { name: "Muộn", value: attendanceSummary.late },
     { name: "Vắng", value: attendanceSummary.absent },
   ];
-  const colors = ["#52c41a", "#faad14", "#f5222d"];
+  const colors = ["#52c41a", "#f5222d"];
 
   return (
     <div className="container mx-auto py-6">
@@ -114,7 +121,7 @@ export function StudentClassDetailPage() {
         <Table
           dataSource={attendanceRecords}
           columns={columns}
-          rowKey={(rec, idx) => idx}
+          rowKey={(rec, idx) => rec.id || idx}
           pagination={false}
         />
       </Card>
@@ -123,9 +130,6 @@ export function StudentClassDetailPage() {
         <Row gutter={16} className="mb-4">
           <Col>
             <Title level={5}>Có mặt: {attendanceSummary.present}</Title>
-          </Col>
-          <Col>
-            <Title level={5}>Muộn: {attendanceSummary.late}</Title>
           </Col>
           <Col>
             <Title level={5}>Vắng: {attendanceSummary.absent}</Title>
@@ -139,7 +143,7 @@ export function StudentClassDetailPage() {
           >
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="name" />
-            <YAxis />
+            <YAxis allowDecimals={false} />
             <Tooltip />
             <Bar dataKey="value">
               {chartData.map((entry, index) => (
